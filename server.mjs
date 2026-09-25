@@ -1,7 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
 import { loadEnv, ROOT } from './lib/llm.mjs';
 
 loadEnv();
@@ -20,27 +19,7 @@ const TYPES = {
   '.md': 'text/markdown; charset=utf-8',
 };
 
-let collecting = false;
-
 http.createServer((req, res) => {
-  // 页面上的"再抓一次"：后台重跑采集脚本（样例页则跑 sample.mjs）
-  if (req.method === 'POST' && req.url.startsWith('/api/rerun')) {
-    if (collecting) { res.writeHead(202, TYPES['.json']).end(JSON.stringify({ ok: true, busy: true })); return; }
-    collecting = true;
-    const script = req.url.includes('sample') ? 'sample.mjs' : 'collect.mjs';
-    const child = spawn(process.execPath, [path.join(ROOT, script)], { cwd: ROOT, windowsHide: true });
-    let out = '';
-    child.stdout.on('data', d => { out += d; });
-    child.stderr.on('data', d => { out += d; });
-    child.on('close', code => {
-      collecting = false;
-      console.log(`[rerun:${script}] exit ${code}\n${out.trim()}`);
-    });
-    res.writeHead(202, { 'Content-Type': TYPES['.json'] });
-    res.end(JSON.stringify({ ok: true }));
-    return;
-  }
-
   let p;
   try {
     p = decodeURIComponent(new URL(req.url, 'http://x').pathname);

@@ -30,33 +30,8 @@ async function init() {
     loadDay(IDX[0].date);
   } else {
     $('#feed-meta').textContent = '';
-    $('#content').innerHTML = `<div class="empty"><span class="big">✦</span>还没有任何数据。<br>在项目目录运行 <code>node collect.mjs</code> 生成今天的 10 个脑洞。</div>`;
+    $('#content').innerHTML = `<div class="empty"><span class="big">✦</span>还没有任何数据。<br>每天 08:30 自动更新；也可以在项目目录运行 <code>node collect.mjs</code> 立即生成。</div>`;
   }
-  $('#rerun-btn').addEventListener('click', () => {
-    const btn = $('#rerun-btn');
-    btn.textContent = '采集中…（几分钟，完成后自动刷新）';
-    fetch('/api/rerun' + (SAMPLE ? '?sample=1' : ''), { method: 'POST' })
-      .then(r => r.json())
-      .then(j => {
-        if (!j.ok) { btn.textContent = '再抓一次'; alert('触发失败：' + (j.error || '未知错误')); return; }
-        const file = SAMPLE ? '/data/sample-20.json' : '/data/index.json';
-        const before = SAMPLE ? state.data?.generatedAt : IDX[0]?.generatedAt;
-        const started = Date.now();
-        const timer = setInterval(async () => {
-          try {
-            const j2 = await (await fetch(file)).json();
-            const now = Array.isArray(j2) ? j2[0]?.generatedAt : j2.generatedAt;
-            if (now && now !== before) { clearInterval(timer); location.reload(); }
-          } catch {}
-          if (Date.now() - started > 15 * 60000) {
-            clearInterval(timer);
-            btn.textContent = '再抓一次';
-            alert('等超时了，请稍后手动刷新页面看看。');
-          }
-        }, 10000);
-      })
-      .catch(() => { $('#rerun-btn').textContent = '再抓一次'; alert('触发失败，请手动运行 node collect.mjs'); });
-  });
 }
 
 // 标题下一行的日期信息 + 前后日切换
