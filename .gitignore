@@ -1,0 +1,14 @@
+# 密钥与本地状态：绝不提交
+.env
+
+# 采集产物：含 AIHOT 上游资讯内容，其许可限制公开镜像/再分发，因此不入库
+data/
+logs/
+
+# 依赖与临时文件
+node_modules/
+*.log
+tmp_*
+~$*
+.DS_Store
+Thumbs.db
