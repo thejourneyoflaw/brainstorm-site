@@ -4,6 +4,7 @@
 # 采集产物：含 AIHOT 上游资讯内容，其许可限制公开镜像/再分发，因此不入库
 data/
 logs/
+site/
 
 # 依赖与临时文件
 node_modules/

@@ -23,7 +23,7 @@ function md(date) {
 const SAMPLE = new URLSearchParams(location.search).has('sample');
 
 async function init() {
-  try { IDX = await (await fetch('/data/index.json')).json(); } catch { IDX = []; }
+  try { IDX = await (await fetch('data/index.json')).json(); } catch { IDX = []; }
   if (SAMPLE) {
     loadDay('sample');
   } else if (IDX.length) {
@@ -55,7 +55,7 @@ function renderMeta(d) {
 async function loadDay(date) {
   state.date = date;
   $('#content').innerHTML = '<div class="empty">加载中…</div>';
-  const url = date === 'sample' ? '/data/sample-20.json' : `/data/${date}.json`;
+  const url = date === 'sample' ? 'data/sample-20.json' : `data/${date}.json`;
   try {
     state.data = await (await fetch(url)).json();
   } catch {
