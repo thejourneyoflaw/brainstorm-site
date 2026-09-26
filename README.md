@@ -1,5 +1,7 @@
 # 头脑风暴 · BRAINSTORM
 
+线上站（GitHub Pages，每日 08:30 自动更新）：<https://thejourneyoflaw.github.io/brainstorm-site/>
+
 每天自动抓取 AI 资讯，由 AI 结合你的个人背景（法务 / 商务 / 金融 / 经济 + 动漫，见 `profile.md`）筛出 **10 个可落地的创意**，在本地网页上以 aihot 风格的暗色时间线浏览。
 
 ## 策展管线（lib/ideas.mjs）
@@ -27,6 +29,13 @@ SKIP_REVIEW=1 node sample.mjs                    # 通道不稳时跳过闸二�
 ```
 
 样例页数据来自 `data/sample-20.json`，重新生成：`node sample.mjs`（`MERGE=1` 合并、`AIHOT_WINDOW=7d` 换窗口、`SKIP_REVIEW=1` 跳过终审）。
+
+## 公网部署（GitHub Pages）
+
+- 公开仓库 `brainstorm-site` 只放**展示快照**（前端 + 数据，无密钥、无 profile），由 `node build-site.mjs` 构建到 `site/`
+- `run-daily.bat` 在每天 08:30 采集完成后自动：构建快照 → 提交 → push → Pages 自动重建，线上站每天早上自己更新
+- 仓库分工：`brainstorm-idea-daily`（私有，全部代码与配置）、`brainstorm-site`（公开，仅展示快照）
+- 许可提醒：快照含 AIHOT 衍生内容（均带署名与原文链接），个人非商业使用没问题；将来若商业化或批量再分发，需先取得 AIHOT 书面授权
 
 ## AI 渠道（自动降级）
 
