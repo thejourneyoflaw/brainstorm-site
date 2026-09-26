@@ -70,7 +70,7 @@ function render() {
   const gen = d.generatedAt ? new Date(d.generatedAt).toLocaleString('zh-CN', { hour12: false }) : '';
   if (d.date === 'sample') {
     const n = (d.ideas || d.fallback || []).length;
-    $('#day-title').textContent = d.title || '样例 · 20 个创意';
+    $('#day-title').textContent = `样例 · ${n} 个创意`;
     $('#feed-meta').innerHTML =
       `样例批次<span class="dot">·</span>${n} 条` +
       `<span class="dot">·</span>候选资讯 ${d.sourceCount} 条` +
