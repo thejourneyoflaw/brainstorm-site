@@ -41,12 +41,36 @@ function setSection(sec) {
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
   if (sec === 'frontier') {
     loadFrontier();
+  } else if (sec === 'archive') {
+    renderArchiveView();
   } else if (IDEAS_DATA) {
     state.data = IDEAS_DATA;
     render();
   } else if (IDX.length) {
     loadDay(IDX[0].date);
   }
+}
+
+// 按月归档：每个月一组，组内按天列出，点击进入当期
+function renderArchiveView() {
+  $('#day-title').textContent = '历史归档';
+  $('#feed-meta').textContent = IDX.length ? `共 ${IDX.length} 期 · 点击任意一天查看当期内容` : '';
+  if (!IDX.length) {
+    $('#content').innerHTML = '<div class="empty">还没有归档。每天 08:30 自动生成一期。</div>';
+    return;
+  }
+  const months = {};
+  IDX.forEach(x => { const ym = x.date.slice(0, 7); (months[ym] = months[ym] || []).push(x); });
+  const html = Object.keys(months).sort().reverse().map(ym => {
+    const days = months[ym];
+    const [y, m] = ym.split('-');
+    return `<div class="month-block"><div class="month-label">${y}年${Number(m)}月<span class="month-cnt">${days.length} 期</span></div><div class="month-days">${days.map(x => `<button class="day-card" data-date="${x.date}"><b>${md(x.date)}</b><span class="mono">${x.count} 条</span></button>`).join('')}</div></div>`;
+  }).join('');
+  $('#content').innerHTML = `<div class="archive-page">${html}</div>`;
+  document.querySelectorAll('.day-card').forEach(b => b.addEventListener('click', () => {
+    setSection('ideas');
+    loadDay(b.dataset.date);
+  }));
 }
 
 async function loadFrontier() {
