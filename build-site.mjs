@@ -15,10 +15,10 @@ for (const f of ['index.html', 'style.css', 'app.js']) {
 // 数据：归档索引 + 样例 + 每日数据
 const dataDir = path.join(ROOT, 'data');
 for (const f of fs.readdirSync(dataDir)) {
-  if (f === 'index.json' || f === 'sample-20.json' || /^\d{4}-\d{2}-\d{2}\.json$/.test(f) || /^frontier-/.test(f)) {
-    if (f === 'frontier-seen.json') continue; // 内部去重状态不公开
-    fs.copyFileSync(path.join(dataDir, f), path.join(site, 'data', f));
-  }
+  const p = path.join(dataDir, f);
+  if (!fs.statSync(p).isFile()) continue; // 跳过子目录（frontier-raw 原文只留本地，不上公网）
+  const want = f === 'index.json' || f === 'sample-20.json' || f === 'frontier-latest.json' || /^\d{4}-\d{2}-\d{2}\.json$/.test(f) || /^frontier-\d{4}-\d{2}-\d{2}\.json$/.test(f);
+  if (want) fs.copyFileSync(p, path.join(site, 'data', f));
 }
 // Pages 关闭 Jekyll 处理
 fs.writeFileSync(path.join(site, '.nojekyll'), '');
