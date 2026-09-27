@@ -51,137 +51,48 @@ function setSection(sec) {
   }
 }
 
-// 按月归档：每个月一组，组内按天列出，点击进入当期
-function renderArchiveView() {
+// 按月归档：今日脑洞与前沿关注分开归档，点击进入当期
+let FRONTIER_IDX = [];
+async function renderArchiveView() {
   $('#day-title').textContent = '历史归档';
-  $('#feed-meta').textContent = IDX.length ? `共 ${IDX.length} 期 · 点击任意一天查看当期内容` : '';
-  if (!IDX.length) {
-    $('#content').innerHTML = '<div class="empty">还没有归档。每天 08:30 自动生成一期。</div>';
-    return;
-  }
-  const months = {};
-  IDX.forEach(x => { const ym = x.date.slice(0, 7); (months[ym] = months[ym] || []).push(x); });
-  const html = Object.keys(months).sort().reverse().map(ym => {
-    const days = months[ym];
-    const [y, m] = ym.split('-');
-    return `<div class="month-block"><div class="month-label">${y}年${Number(m)}月<span class="month-cnt">${days.length} 期</span></div><div class="month-days">${days.map(x => `<button class="day-card" data-date="${x.date}"><b>${md(x.date)}</b><span class="mono">${x.count} 条</span></button>`).join('')}</div></div>`;
-  }).join('');
+  $('#feed-meta').textContent = '「今日脑洞」与「前沿关注」分开归档 · 点击任意一天进入当期';
+  try { FRONTIER_IDX = await (await fetch('data/frontier-index.json')).json(); } catch { FRONTIER_IDX = []; }
+  const html = monthGroups(IDX, 'ideas', '今日脑洞') + monthGroups(FRONTIER_IDX, 'frontier', '前沿关注');
   $('#content').innerHTML = `<div class="archive-page">${html}</div>`;
   document.querySelectorAll('.day-card').forEach(b => b.addEventListener('click', () => {
-    setSection('ideas');
-    loadDay(b.dataset.date);
+    if (b.dataset.sec === 'frontier') {
+      state.section = 'frontier';
+      document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.sec === 'frontier'));
+      loadFrontierDay(b.dataset.date);
+    } else {
+      setSection('ideas');
+      loadDay(b.dataset.date);
+    }
   }));
 }
 
-async function loadFrontier() {
-  state.data = null;
-  $('#day-title').textContent = '前沿关注';
-  $('#feed-meta').textContent = '';
-  $('#chip-row') && ($('#chip-row').innerHTML = '');
-  $('#content').innerHTML = '<div class="empty">加载中…</div>';
-  try {
-    state.data = await (await fetch('data/frontier-latest.json')).json();
-  } catch {
-    $('#content').innerHTML = `<div class="empty">还没有前沿关注数据。<br>每天 08:30 会自动检查这 8 个公众号的更新；也可以在项目目录运行 <code>node frontier.mjs</code> 立即检查。</div>`;
-    return;
-  }
-  render();
-}
-
-// 标题下一行的日期信息 + 前后日切换
-function renderMeta(d) {
-  const i = IDX.findIndex(x => x.date === d.date);
-  const older = i >= 0 && i + 1 < IDX.length ? IDX[i + 1] : null;
-  const newer = i > 0 ? IDX[i - 1] : null;
-  const link = (item, ch) => item
-    ? `<a class="day-link" data-date="${item.date}" title="${item.date}">${ch}</a>`
-    : `<span class="day-off">${ch}</span>`;
-  const gen = d.generatedAt ? new Date(d.generatedAt).toLocaleString('zh-CN', { hour12: false }) : '';
-  $('#feed-meta').innerHTML =
-    `${link(older, '‹')}${md(d.date)}${link(newer, '›')}` +
-    `<span class="dot">·</span>${(d.ideas || d.fallback || []).length} 条` +
-    `<span class="dot">·</span>候选资讯 ${d.sourceCount} 条` +
-    (gen ? `<span class="dot">·</span>生成于 ${esc(gen)}` : '');
-  document.querySelectorAll('.day-link').forEach(a =>
-    a.addEventListener('click', e => { e.preventDefault(); loadDay(a.dataset.date); }));
-}
-
-async function loadDay(date) {
+async function loadFrontierDay(date) {
   state.date = date;
   $('#content').innerHTML = '<div class="empty">加载中…</div>';
-  const url = date === 'sample' ? 'data/sample-20.json' : `data/${date}.json`;
-  try {
-    state.data = await (await fetch(url)).json();
-    IDEAS_DATA = state.data;
-  } catch {
-    $('#content').innerHTML = '<div class="empty">这一批数据加载失败。</div>';
+  try { state.data = await (await fetch(`data/frontier-${date}.json`)).json(); } catch {
+    $('#content').innerHTML = '<div class="empty">这一期加载失败。</div>';
     return;
   }
-  render();
+  renderFrontier();
 }
 
-function render() {
-  if (state.section === 'frontier') { renderFrontier(); return; }
-  const d = state.data;
-  const gen = d.generatedAt ? new Date(d.generatedAt).toLocaleString('zh-CN', { hour12: false }) : '';
-  if (d.date === 'sample') {
-    const n = (d.ideas || d.fallback || []).length;
-    $('#day-title').textContent = `样例 · ${n} 个创意`;
-    $('#feed-meta').innerHTML =
-      `样例批次<span class="dot">·</span>${n} 条` +
-      `<span class="dot">·</span>候选资讯 ${d.sourceCount} 条` +
-      (d.review ? `<span class="dot">·</span>异模型终审通过 ${d.review.approved}/${d.review.total}` : '') +
-      (gen ? `<span class="dot">·</span>生成于 ${esc(gen)}` : '');
-  } else {
-    $('#day-title').textContent = d.date === todayLocal() ? '今日脑洞' : `${d.date.slice(5).replace('-', '/')} 的脑洞`;
-    renderMeta(d);
+function monthGroups(list, sec, label) {
+  if (!list.length) {
+    return `<div class="arc-group"><div class="arc-head">${label}<span class="month-cnt">暂无归档</span></div><div class="empty" style="padding:14px">这一板块还没有数据，每天 08:30 自动生成。</div></div>`;
   }
-
-  const ideas = d.ideas || [];
-  if (!ideas.length) { renderFallback(d); return; }
-
-  const topScore = Math.max(...ideas.map(x => x.score ?? x.funScore ?? 0));
-  $('#content').innerHTML =
-    (d.notice ? `<div class="info-banner">ℹ ${esc(d.notice)}</div>` : '') +
-    (d.warnings && d.warnings.length ? `<div class="warn-banner">⚠ ${esc(d.warnings.join('；'))}</div>` : '') +
-    ideas.map(x => cardHTML(x, (x.score ?? x.funScore) === topScore)).join('');
-}
-
-function renderFrontier() {
-  const d = state.data;
-  const gen = d.generatedAt ? new Date(d.generatedAt).toLocaleString('zh-CN', { hour12: false }) : '';
-  const isToday = d.date === todayLocal();
-  $('#day-title').textContent = isToday ? '前沿关注 · 今天' : `前沿关注 · ${d.date.slice(5).replace('-', '/')}`;
-  const ch = d.channels || {};
-  $('#feed-meta').innerHTML =
-    `覆盖 ${(d.targets || []).length} 个公众号` +
-    `<span class="dot">·</span>本批分析 ${(d.items || []).length} 篇` +
-    `<span class="dot">·</span>发现通道：AIHOT${ch.rssConfigured ? ' + RSS 订阅' : '（RSS 未配置，覆盖有限）'}` +
-    (gen ? `<span class="dot">·</span>检查于 ${esc(gen)}` : '');
-  const items = d.items || [];
-  $('#content').innerHTML = items.length
-    ? items.map(frCardHTML).join('')
-    : `<div class="empty"><span class="big">📡</span>这一批没有发现这 8 个公众号的新文章。<br>发现通道：AIHOT 精选池（零星覆盖）${ch.rssConfigured ? ' + RSS 订阅' : ''}。想做到每天全覆盖：部署 we-mp-rss 后把 RSS 地址填进 .env 的 FRONTIER_RSS_URLS，或往 data/frontier-links.txt 里贴文章链接。</div>`;
-}
-
-function frCardHTML(x) {
-  return `
-  <div class="tl-item">
-    <span class="tl-dot"></span>
-    <article class="card">
-      <div class="card-head">
-        <span class="field">${esc(x.account)}</span>
-        <span class="src">${x.publishedAt ? esc(String(x.publishedAt).slice(0, 10)) : ''}</span>
-        ${x.analyzed ? '' : '<span class="grade warn-tag">未完整分析</span>'}
-      </div>
-      <h2 class="card-title"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a></h2>
-      <div class="fr-block"><div class="fr-label">讲了什么</div><div class="fr-body">${esc(x.digest)}</div></div>
-      ${x.significance ? `<div class="fr-block"><div class="fr-label">有什么意义</div><div class="fr-body">${esc(x.significance)}</div></div>` : ''}
-      ${(x.applications || []).length ? `<div class="fr-block"><div class="fr-label">可以怎么用</div><ul class="fr-apps">${x.applications.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>` : ''}
-      ${(x.tags || []).length ? `<div class="tags">${x.tags.map(t => `<span class="tag ${TAG_CLS[t] || 't-other'}">${esc(t)}</span>`).join('')}</div>` : ''}
-      <div class="news-quote"><a href="${esc(x.url)}" target="_blank" rel="noopener">阅读原文 ↗</a><span class="nq-src">微信公众号 · ${esc(x.account)}</span></div>
-    </article>
-  </div>`;
+  const months = {};
+  list.forEach(x => { const ym = x.date.slice(0, 7); (months[ym] = months[ym] || []).push(x); });
+  const groups = Object.keys(months).sort().reverse().map(ym => {
+    const days = months[ym];
+    const [y, m] = ym.split('-');
+    return `<div class="month-label">${y}年${Number(m)}月<span class="month-cnt">${days.length} 期</span></div><div class="month-days">${days.map(x => `<button class="day-card" data-sec="${sec}" data-date="${x.date}"><b>${md(x.date)}</b><span class="mono">${x.count} 条</span></button>`).join('')}</div>`;
+  }).join('');
+  return `<div class="arc-group"><div class="arc-head">${label}<span class="month-cnt">共 ${list.length} 期</span></div>${groups}</div>`;
 }
 
 function cardHTML(x, isTop) {
