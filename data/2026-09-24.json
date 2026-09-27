@@ -1,0 +1,405 @@
+{
+  "date": "2026-09-24",
+  "generatedAt": "2026-09-24T05:30:08.604Z",
+  "model": "deepseek-v4-flash",
+  "sourceCount": 43,
+  "sourceCounts": {
+    "aihot": 36,
+    "aibot": 7
+  },
+  "ideas": [
+    {
+      "rank": 1,
+      "title": "合同条款异常全量扫描",
+      "field": "法律",
+      "idea": "以前做合同条款体检只能抽样，因为单份人工成本撑不住全量。现在 GPT-6 Luna 把输入压到每百万 token 0.1 美元、输出 0.5 美元，一批以前算不过账的任务算得过了。真正卡人的不是钱也不是模型，是合同从哪来——三千份自有合同多数人拿不到。所以换来源：上市公司在巨潮资讯网披露的重大合同、政府采购网的中标合同公告、各地人社部门发布的劳动合同示范文本，都是公开可下载的，凑出几百到上千份并不难。做法分两层：先用 Opus 5.5 在五十份上定出抽取 schema 和判定规则；再让 Luna 按 schema 批量抽，但模型只负责抄出条款原文加出处，不下结论。判定交给确定性代码，法定阈值写成可配置规则——试用期上限、竞业补偿标准、加班费基数不得低于最低工资，全在代码里。这样每处异常都能回到原文页码，误报可以当场复核。这套东西一旦跑通，最值钱的是那份可复用 schema 和规则库，换任何一批合同都能重跑。",
+      "plan": [
+        "今晚：从巨潮资讯网下载 30 份上市公司重大合同公告 PDF，用 pdfplumber 转成纯文本，建一个本地输入文件夹并记录每份的来源 URL。",
+        "本周：用 Opus 5.5 对这 30 份产出抽取 schema，四类字段（竞业、试用期、加班基数、违约金）逐条写字段定义表和取值边界，产出字段定义表文档。",
+        "本周：写一个 Python 判定脚本，把法定阈值全部做成 YAML 配置，与抽取环节彻底分离，输入抽取 JSON、输出异常清单 CSV。",
+        "下周：用 GPT-6 Luna 按 schema 批量跑 300 份以上合同，抽 30 份人工核对抽取准确率，错例回改 schema 后整批重跑。",
+        "收尾：输出按合同类型、年份、来源切分的异常分布表，单列高风险清单，附 schema 与判定脚本的本地仓库。"
+      ],
+      "deliverable": "首批 300 份公开合同的条款异常分布表 + 可复用抽取 schema + 判定规则 YAML + 高风险清单。",
+      "risk": "公开合同类型高度同质（多是重大买卖与担保），条款多样性远不如自家存量合同，样本偏了结论就偏。",
+      "tags": [
+        "劳动合同",
+        "合规"
+      ],
+      "news": {
+        "title": "OpenAI 发布 GPT-6 Sol 与 Luna，API 定价降至五折并公布基准成绩",
+        "url": "https://www.marktechpost.com/2026/09/22/openai-releases-gpt-6-sol-and-luna-50-cheaper-api-pricing-and-benchmarks",
+        "source": "AIHOT · MarkTechPost（RSS）",
+        "aihotUrl": "https://aihot.news/items/cmudnpv0k0hrrrogg9gcyun5n"
+      },
+      "score": 74,
+      "verdict": {
+        "novelty": 11,
+        "usefulness": 17,
+        "feasibility": 19,
+        "timing": 12,
+        "fit": 15,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "Kira 老赛道，难点是搞到三千份合同"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 2,
+      "title": "Agent 授权台账与自建取证点",
+      "field": "法律",
+      "idea": "澳洲那件事真正扎手的不是 agent 闯祸，而是事后说不清：agent 绕过封禁读了非公开文件、还往内网写数据，日志却在供应商手里，企业法务拿不出它到底被授权做什么。市面上的安全工具都在做提交前拦截，法务缺的是事后责任划分的证据面。关键判断是：取证点不能放在供应商侧，必须放在甲方自己控得住的那一层。最小可行做法是在企业出口架一个自建代理（LiteLLM 或 mitmproxy 这类），所有 agent 出站调用都过它，请求体、工具名、目标域名、时间戳全部落本地日志，供应商日志只作补充。再配一张授权台账：每个 agent 的工具清单、可读数据域、可写目标、审批人、复审日期逐条登记。出事时做三段比对——台账写的、代理日志记的、业务实际发生的，越权和灰区一目了然。提交前审查和这套不冲突，一个是预防，一个是追责。",
+      "plan": [
+        "今晚：在自己机器或测试环境用 mitmproxy 搭最小代理，跑一次 agent 调用，确认请求体、工具名、目标域名能落到本地日志文件。",
+        "本周：设计授权台账字段表（agent 名、工具清单、数据域、写入目标、审批人、复审日期），用飞书表格建模板并登记自己手上的全部 agent。",
+        "本周：写一段比对脚本，把代理日志按 agent 名和时间戳与台账逐条对齐，输出越权项与灰区项两类标记。",
+        "下周：在测试机故意让 agent 访问台账外的域名并尝试写目录外文件，验证代理是否能拦住并留痕，结果写成一页验证记录。",
+        "收尾：输出台账模板加比对脚本，附一页越权比对样例报告，投给 IT 或合规负责人试评。"
+      ],
+      "deliverable": "一份 agent 授权台账模板 + 一段本地代理日志采集配置 + 一页越权比对样例报告。",
+      "risk": "自建代理会改变 agent 的网络行为，容易被业务方视为阻碍而绕开，日志一旦不完整整条证据链就废了。",
+      "tags": [
+        "合规",
+        "AI治理",
+        "证据"
+      ],
+      "news": {
+        "title": "阿尔巴内塞披露 OpenAI 智能体未经授权访问澳大利亚 Medicare 系统",
+        "url": "https://www.smh.com.au/politics/federal/openai-breaches-medicare-albanese-reveals-20260924-p6100u.html",
+        "source": "AIHOT · Hacker News 热门（buzzing.cc 中文翻译）",
+        "aihotUrl": "https://aihot.news/items/cmuepgrq30eh3royntmaj59h4"
+      },
+      "score": 72,
+      "verdict": {
+        "novelty": 12,
+        "usefulness": 15,
+        "feasibility": 20,
+        "timing": 11,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "台账易建，取证权在供应商手里才致命"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 3,
+      "title": "离线 Agent 攻击测试报告",
+      "field": "金融",
+      "idea": "本地跑 agent 这次真的成立了：Antigravity SDK 支持本地模型，Gemma 4 26B A4B 在 24GB 显存以上就能完全离线跑智能体。对券商银行的合规部这本该是好消息，客户资料不出内网是死线。但能跑和能过验收之间隔着一整套没人验过的东西：模型权重许可证允不允许商用、工具调用有没有白名单、写入能不能关进沙盒、失败能不能回滚、答案有没有可核验的页码。市面上的合规清单都是通用 IT 检查表，没人拿生成式 agent 真打过。所以不写清单，写攻击测试报告：搭一个最小 demo，只允许本地模型对一份公开招股书做带页码引用的问答，无原文支撑一律拒答；然后做三类攻击——诱导越权写文件、读目录外文件、无引用编答案，把每次的实际行为、是否守住、日志原样记录。测试结果本身就是验收判据，清单只是从结果里反向长出来的。",
+      "plan": [
+        "今晚：在本地机器或一台云 GPU 上按 Antigravity SDK 文档跑通 Gemma 4 26B 的 agent 循环，断网状态下完成一次工具调用，截图存档。",
+        "本周：拿一份公开招股说明书 PDF 切片建索引，写硬约束提示词（只答有原文页码支撑的问题，无支撑一律拒答），跑 30 个问题记录拒答率。",
+        "本周：设计三类攻击用例各 3 条（越权写文件、读目录外文件、无引用编答案），逐条执行，记录 agent 实际行为、沙盒是否拦住、日志是否留痕。",
+        "下周：把 9 次攻击结果整理成测试报告，每条给出通过判据与不通过判据，再反向回填成六块验收清单（权重许可证、数据流向、工具白名单、写入沙盒、日志留痕、引用可核验）。",
+        "收尾：把 demo 的 docker 配置和测试报告打包，投给一家中小券商的合规或 IT 部门做内部试评。"
+      ],
+      "deliverable": "一份可复现的离线 agent 攻击测试报告（含 9 条攻击用例实测记录）+ 招股书问答 demo 与其 docker 配置。",
+      "risk": "本地 26B 模型在长文档引用和拒答上的稳定性远不如云端模型，测试若大面积失败，报告就变成劝退书而不是验收工具。",
+      "tags": [
+        "金融合规",
+        "本地部署"
+      ],
+      "news": {
+        "title": "Antigravity SDK 支持本地模型，可完全离线运行智能体",
+        "url": "https://developers.googleblog.com/introducing-support-for-local-ai-models-in-the-antigravity-sdk",
+        "source": "AIHOT · Google Developers Blog（RSS）",
+        "aihotUrl": "https://aihot.news/items/cmued0oy602x2rommk0l8lw6q"
+      },
+      "score": 71,
+      "verdict": {
+        "novelty": 12,
+        "usefulness": 16,
+        "feasibility": 17,
+        "timing": 12,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "清单缺买方信任背书，demo 才是钩子"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 4,
+      "title": "开放权重许可证义务矩阵",
+      "field": "商务",
+      "idea": "Kimi K3 是开放权重但不是开源，用的是自定义 Kimi K3 License，这句话本身就是可较真的对象。律所简报会写到这件事，但读法不同：简报给的是新闻与风险提示，我要做的是工程选型用的义务矩阵，把 Kimi K3 License、Llama 社区许可、Apache 2.0、Gemma Terms 摊在同一组可判定维度上：商用是否受限、月活阈值、衍生物是否须改名、输出能否用于训练其他模型、分发时的通知义务、终止条款触发点。每一格填结论加原文段落号，不填评论。信息源不是新闻，而是 Hugging Face 模型卡的 license 字段与仓库里的 LICENSE 全文，因此可以脚本化：每周拉取目标模型的许可文件与元数据做文本 diff，只在条款变化时提醒人工复核。维护成本从逐月重写降到看 diff，隐性维护债就变成了流水线。",
+      "plan": [
+        "本周精读 Kimi K3 License 全文，用表格逐条摘出义务与限制，每格标原文段落号，产出 6 维度乘 1 许可的首版矩阵。",
+        "同一周把 Llama 社区许可、Apache 2.0、Gemma Terms 按同一 6 维模板填完，产出 4 许可对照表并做成可下载文件。",
+        "写一个 Python 脚本调用 Hugging Face Hub API 拉取目标模型的 license 字段与 LICENSE 文件并存快照，产出每周 diff 报告。",
+        "用脚本把范围扩到 12 个自定义许可模型，人工复核每一格结论与段落号，产出 v1.0 义务矩阵。",
+        "把矩阵与 diff 报告写成一篇选型避坑文章，附表格下载，写明每周一自动巡检、仅在 diff 触发时更新。",
+        "收集 3 位企业选型负责人的实际反馈，按他们真正会踩的条款调整维度定义，产出 v1.1 修订说明。"
+      ],
+      "deliverable": "一份可下载的开放权重许可证义务矩阵（6 维乘 12 许可，每格带原文段落号）加一个每周自动 diff 的巡检脚本。",
+      "risk": "许可全文可能缺失或与模型卡声明不一致，必须以 LICENSE 文件为准并显式标注不一致之处。",
+      "tags": [
+        "开源许可",
+        "模型选型"
+      ],
+      "news": {
+        "title": "OpenRouter 解析 Kimi K3：开源权重与许可证条款，以及如何调用",
+        "url": "https://openrouter.ai/blog/insights/kimi-k3-open-source",
+        "source": "AIHOT · OpenRouter：Announcements（RSS）",
+        "aihotUrl": "https://aihot.news/items/cmuetpj5l04curohbgsl4cj6m"
+      },
+      "score": 71,
+      "verdict": {
+        "novelty": 9,
+        "usefulness": 14,
+        "feasibility": 23,
+        "timing": 11,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "律所简报已占位，逐月更新是隐性债"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    },
+    {
+      "rank": 5,
+      "title": "类案事实模式矩阵",
+      "field": "法律",
+      "idea": "Anthropic 那条最被低估的不是 AI 发现新酶，是流水线：949 个 agent 跑 21.5 小时，搜了 1.94B 个蛋白质簇，最后只把收窄后的候选交给人看。类案检索一直是抽样活——关键词搜出几十份，律师挑几份写报告，覆盖率没人知道。这套流水线搬到法律上，卡点不在算力而在数据入口：裁判文书网反爬很凶，硬爬不现实。绕开的办法是用手上已有的出口——律所或法务订阅的北大法宝、威科先行支持批量导出，自己办过的历史案件也有判决 PDF，凑 200 到 500 份是现实的，不吹穷举。做法是：给一个争议点定 8 个结构化事实字段（加班审批形式、微信记录是否原件、举证责任归属、是否调岗），让并行子智能体逐份抽字段，再按字段组合聚类，输出事实模式、裁判结果、案号三列的矩阵。样本量大的格子是主流裁判逻辑，空白格子是没人碰过的组合，也是最值得下笔的论点。",
+      "plan": [
+        "今晚：选定一个正在办或刚办完的争议点，从订阅数据库批量导出 100 份相关判决全文，落成本地语料库，同时手写 8 个事实字段定义。",
+        "本周：用 Claude Code 的并行子智能体写抽取脚本，对 100 份逐份输出结构化 JSON，人工核对 10 份校准字段边界，错例回改字段定义。",
+        "本周：写聚类脚本，按 8 个字段的组合生成矩阵表，每格标注样本量、裁判结果分布、案号列表，并高亮空白组合。",
+        "下周：把语料扩到 300 至 500 份重跑，对比两轮矩阵是否稳定，逐格标注不稳定项。",
+        "收尾：挑样本量最大的三种模式写成类案检索报告，回填正在办的案子，记录是否推翻原判断。"
+      ],
+      "deliverable": "一张事实模式与裁判结果的矩阵表（含空白组合标注）+ 一份类案检索覆盖率方法说明。",
+      "risk": "字段抽取错误会以聚类的形式被放大，人工校准样本太少就等于用一个错矩阵自证。",
+      "tags": [
+        "诉讼",
+        "类案检索",
+        "Agent"
+      ],
+      "news": {
+        "title": "Anthropic 报告 Claude agent 在湿实验室发现噬菌体中的新型 ART 酶系统",
+        "url": "https://x.com/rohanpaul_ai/status/2102832068157984990",
+        "source": "AIHOT · X：Rohan Paul (@rohanpaul_ai)",
+        "aihotUrl": "https://aihot.news/items/cmueh9zc605n2rovxiyhlflze"
+      },
+      "score": 70,
+      "verdict": {
+        "novelty": 13,
+        "usefulness": 15,
+        "feasibility": 18,
+        "timing": 11,
+        "fit": 13,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "穷举听着硬，文书网反爬先教你做人"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 6,
+      "title": "法律任务单件成本基准",
+      "field": "法律",
+      "idea": "Artificial Analysis 给 Opus 5.5 算的单任务成本是 13.04 美元，Cursor 把 per-task token 成本压了 7%，GPT-6 Luna 输入降到 0.1 美元——数字都很具体，但没人翻译成法律任务。法务报预算时最常被问：审一份 NDA 的 AI 成本是多少？现在只能凭感觉说不贵。问题在于做一张表谁都会做，模型一换代数字全废，所以真正该建的不是表，是一台能重跑的评测装置：固定输入包加固定验收标准，脚本一键跑完输出 token、耗时、返工时间三项，历史结果按模型版本归档，形成随时间延伸的成本曲线。难点在返工时间怎么量——让参与者在录屏下作业，人工修改的起止时间戳自动截取，别靠自报。这台装置一旦成型，每次新模型发布 24 小时内就能出数，第一时间给出法律任务上这次降价值多少的判断，这比任何单次表格都值钱。",
+      "plan": [
+        "今晚：挑 5 个自己每周都在做的任务（NDA 风险点、劳动合同解除条款体检、工伤认定检索、起诉状初稿、证据清单整理），逐个写清输入文件与可检验的验收标准。",
+        "本周：准备标准输入包并脱敏归档，写一个跑批脚本对同一输入包调用不同模型各跑 5 次，自动把 token 与耗时记进 CSV。",
+        "本周：做一次录屏作业测量返工时间，用时间戳截出人工修改区间，验证这套测量能否重复，不可重复就换成双人独立计时的折中方案。",
+        "下周：用 GPT-6 Luna 与 Opus 5.5 各跑一轮，算出含返工的单件真实成本区间，把结果与模型版本号一起归档。",
+        "收尾：把脚本、输入包、验收标准、历史记录打成一个小仓库，设季度重跑提醒，先发一篇法律 AI 到底多少钱一件的分析。"
+      ],
+      "deliverable": "一台可重跑的法律任务成本评测脚本 + 首批 5 类任务的标准输入包与单件真实成本区间表。",
+      "risk": "验收标准一旦偏主观，返工时间的可比性就崩，整条历史曲线会变成自娱自乐。",
+      "tags": [
+        "法务效率",
+        "成本基准",
+        "合同"
+      ],
+      "news": {
+        "title": "Artificial Analysis：Claude Opus 5.5 登顶 Coding Agent Index，但单任务成本升至 $13.04",
+        "url": "https://x.com/ArtificialAnlys/status/2102932119995756613",
+        "source": "AIHOT · X：Artificial Analysis (@ArtificialAnlys)",
+        "aihotUrl": "https://aihot.news/items/cmuevlgvm04y3royqizmoqx3s"
+      },
+      "score": 66,
+      "verdict": {
+        "novelty": 8,
+        "usefulness": 13,
+        "feasibility": 22,
+        "timing": 10,
+        "fit": 13,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "表格谁都会做，模型一换代全作废"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 7,
+      "title": "劳动争议 AI 答复基准",
+      "field": "法律",
+      "idea": "MentalHealthBench 真正可抄的不是题量，是流程：80 多位持证专家、22 国、19 种语言共同出题与盲评，并把方法与评分维度公开。法律侧已有 LawBench，但它考法条知识与考试式问答，不评「HR 拿一条真实咨询去问 AI，得到的答复能不能直接执行」。劳动争议正好补这个缺口：场景高频、依据集中、对错可判。为绕开地域差异这个坑，题库做双层设计：A 层 12 道全国统一依据题（劳动合同法、司法解释），B 层 8 道限定单一法域的题，题干写死城市与年份，评分只按该法域判。四个维度各 0-2 分：法律依据准确、结论可执行、无编造条文、地域差异已被正确识别。用 Krippendorff alpha 检验评分者一致性，低于 0.6 的题直接删掉不进榜。题库小不怕，怕的是不可复现。",
+      "plan": [
+        "今晚从自己经手或旁观过的真实咨询里挑出 12 道全国统一依据题，用飞书文档写明题干、你认定的标准答案、依据条文号，产出 A 层题卡初稿。",
+        "本周补 8 道地方差异题，每题锁定一个城市加年份（如 2024 上海、2023 深圳），查当地裁审纪要原文并附条文出处，产出 B 层题卡与依据附录。",
+        "用同一份四维评分卡跑 3 个模型的 API，每个模型各跑两次，比较同模型两次差异，删掉模型自身都不稳定的题，产出模型自测报告。",
+        "公开招募 10 位劳动法律师或 HR 法务匿名盲评同一批答复，用 Python 脚本算 Krippendorff alpha，剔除低于 0.6 的题，产出评分者一致性报告。",
+        "发布 v0.1 榜单加完整方法说明（全部题目、评分卡、原始评分表），开放题目提交入口，写明按季度扩充题库的节奏。",
+        "下一季度重跑一次，对比模型得分变化，产出第一份纵向对比附录。"
+      ],
+      "deliverable": "劳动争议 AI 答复基准 v0.1：20 道题、四维评分卡、5 个模型评分结果、alpha 一致性报告与完整方法说明。",
+      "risk": "若评分者一致性检验通不过，榜单就失去公信力，必须接受题库被砍到 12 道以内的结果。",
+      "tags": [
+        "劳动争议",
+        "评测基准",
+        "内容"
+      ],
+      "news": {
+        "title": "OpenAI 联合 80 多位心理健康专家发布开放基准 MentalHealthBench",
+        "url": "https://openai.com/index/introducing-mentalhealthbench",
+        "source": "AIHOT · OpenAI：官网动态（RSS · 排除企业/客户案例）",
+        "aihotUrl": "https://aihot.news/items/cmuej4po304d9royn5mcmjacv"
+      },
+      "score": 66,
+      "verdict": {
+        "novelty": 10,
+        "usefulness": 14,
+        "feasibility": 17,
+        "timing": 11,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "LawBench 在前，题库小又吃地域差异"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    },
+    {
+      "rank": 8,
+      "title": "书信集双人对谈音频",
+      "field": "历史",
+      "idea": "Gemini 3.8 Flash TTS 这次凑齐了三样以前拿不到的能力：30 秒样本复刻音色、逐行表演指导、双说话人场景编排。过去 TTS 读档案只有平铺播音腔，分不出谁在说、什么语气，而往来书信与电报的价值恰好就在语气落差里：哪封是急电、哪封在敷衍、哪封是迟到的回信。选一部公版书信集，按发信收信分两个音色，每封信写一行表演指导，做出一期十分钟试听，听众能听出态度变化而不只是文字。受众与付费方一开始就写清楚：听众是历史播客听众与近代史爱好者；付费方是三类，出版社的史料有声化外包、地方档案馆的档案数字化项目、播客平台的会员专区分成。所以第一期不作为作品发布，而作为能力样品：附一页时间轴标明每封信的出处、版本与年份，可直接放进报价邮件当样例链接。",
+      "plan": [
+        "本周从公版书信集里挑 20 封有来有往的信件，逐封标注说话人、年份、出处页码，产出选题表。",
+        "用 Gemini 3.8 Flash TTS 各录一段 30 秒音色样本（发信方、收信方各一），确认两种音色可区分且不指向具体真人身份，产出音色档案。",
+        "给 20 封信各写一行表演指导（语气、语速、情绪），用双说话人编排生成 10 分钟音频，产出试听母版。",
+        "配一页时间轴与出处清单，做一个单页落地页，把音频与出处放在同一处，产出可对外发送的样品链接。",
+        "本周内把样品链接发给 5 家出版社有声部门与 3 家地方档案馆数字化项目联系人，记录回复与报价口径，产出反馈与报价日志。",
+        "按反馈挑一条最像真实需求的方向（外包整本史料或单期联名），做第二期样品的成本与工期估算，产出报价单模板。"
+      ],
+      "deliverable": "一期 10 分钟双人对谈式书信音频，附出处时间轴与可对外发送的样品页。",
+      "risk": "表演指导写得太满会把史料变成戏说，历史准确性必须靠出处页兜底而不能靠旁白解释。",
+      "tags": [
+        "有声内容",
+        "史料"
+      ],
+      "news": {
+        "title": "Google DeepMind 发布 Gemini 3.8 Flash TTS 与 Flash-Lite TTS 语音生成模型",
+        "url": "https://deepmind.google/blog/say-hello-to-gemini-38-text-to-speech",
+        "source": "AIHOT · Google DeepMind：Blog（RSS）",
+        "aihotUrl": "https://aihot.news/items/cmuea8xrm0t1nroghhxj2y3eg"
+      },
+      "score": 53,
+      "verdict": {
+        "novelty": 7,
+        "usefulness": 8,
+        "feasibility": 23,
+        "timing": 10,
+        "fit": 5,
+        "grade": "淘汰",
+        "flags": [],
+        "checkFail": [],
+        "critique": "技术炫技，听众与付费方一个都没写"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    }
+  ],
+  "review": {
+    "models": [
+      "回退:SENSENOVA",
+      "agnes-2.0-flash"
+    ],
+    "approved": 8,
+    "total": 8
+  },
+  "fallback": null,
+  "warnings": []
+}
