@@ -23,3 +23,9 @@
 
 - `build-site.mjs` 曾整目录删除 `site/`（连 `.git` 一起），毁掉对方提交历史——已修复为"保留 .git、只覆盖受管文件"。
 - 长时间前台/后台 node 进程会被环境回收：大任务放后台并轮询，或拆小批。
+
+## 事故记录
+
+- 2026-09-27：辅助会话把**站点快照 force-push 到了主仓库**（brainstorm-idea-daily 的 main 变成 13 文件快照，代码全部丢失）。
+- 恢复方式：本地保留着完整历史，`git push -f origin main` 即可找回全部代码；另有 `code-backup` 分支兜底。
+- 规则重申：**站点快照只能推 brainstorm-site 仓库；主仓库 brainstorm-idea-daily 只推完整代码，且禁止 force-push**。
