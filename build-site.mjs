@@ -5,16 +5,14 @@ import path from 'node:path';
 import { ROOT } from './lib/llm.mjs';
 
 const site = path.join(ROOT, 'site');
-// 只覆盖受管文件，保留 .git（多会话协作：不要整目录删除，会毁掉对方的提交历史）
-if (!fs.existsSync(path.join(site, '.git'))) {
-  fs.rmSync(site, { recursive: true, force: true });
-  fs.mkdirSync(path.join(site, 'data'), { recursive: true });
-} else {
-  fs.mkdirSync(path.join(site, 'data'), { recursive: true });
-  for (const f of fs.readdirSync(site)) {
-    if (f === '.git' || f === 'data') continue;
-    fs.rmSync(path.join(site, f), { recursive: true, force: true });
-  }
+// 温和清理：保留 .git（多会话协作）；个别被锁的文件直接忽略
+fs.mkdirSync(path.join(site, 'data'), { recursive: true });
+for (const f of fs.readdirSync(site)) {
+  if (f === '.git' || f === 'data') continue;
+  try { fs.rmSync(path.join(site, f), { recursive: true, force: true }); } catch {}
+}
+for (const f of fs.readdirSync(path.join(site, 'data'))) {
+  try { fs.rmSync(path.join(site, 'data', f), { force: true }); } catch {}
 }
 
 // 前端
