@@ -42,6 +42,27 @@ a { color: inherit; text-decoration: none; }
 
 .feed-head h1 { font-size: 23px; margin: 0 0 6px; letter-spacing: 0.01em; }
 
+/* 板块切换 */
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab {
+  padding: 5px 16px; border-radius: 999px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-mid); font-size: 13px; cursor: pointer;
+}
+.tab:hover { border-color: var(--border-strong); color: var(--text-soft); }
+.tab.active {
+  border-color: transparent; color: #04262b; font-weight: 650;
+  background: linear-gradient(135deg, var(--cyan-a), var(--cyan-b));
+}
+
+/* 前沿关注卡片区块 */
+.fr-block {
+  margin-top: 11px; padding: 10px 13px;
+  background: var(--surface-elevated); border-radius: var(--radius-sm);
+}
+.fr-label { font-size: 11px; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 5px; }
+.fr-body { font-size: 13px; color: var(--text-soft); line-height: 1.7; white-space: pre-wrap; }
+.fr-apps { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-soft); line-height: 1.8; }
+
 /* 站点标识 */
 .brand {
   display: flex; align-items: center; gap: 8px;
@@ -207,3 +228,9 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
 }
 .link-btn:hover { color: var(--accent); }
+
+/* 前沿关注卡片 */
+.w-block { margin-top: 12px; }
+.w-label { font-size: 11px; letter-spacing: 0.12em; color: var(--accent); margin-bottom: 5px; }
+.w-text { font-size: 13.2px; color: var(--text-soft); line-height: 1.75; }
+.w-list { margin: 0; padding-left: 20px; font-size: 13.2px; color: var(--text-soft); line-height: 1.75; }

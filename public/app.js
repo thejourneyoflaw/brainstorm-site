@@ -1,5 +1,6 @@
 const $ = s => document.querySelector(s);
-const state = { date: null, data: null };
+const state = { date: null, data: null, section: 'ideas' };
+let IDEAS_DATA = null;
 let IDX = [];
 
 const TAG_CLS = {
@@ -23,6 +24,7 @@ function md(date) {
 const SAMPLE = new URLSearchParams(location.search).has('sample');
 
 async function init() {
+  document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => setSection(b.dataset.sec)));
   try { IDX = await (await fetch('data/index.json')).json(); } catch { IDX = []; }
   if (SAMPLE) {
     loadDay('sample');
@@ -32,6 +34,34 @@ async function init() {
     $('#feed-meta').textContent = '';
     $('#content').innerHTML = `<div class="empty"><span class="big">✦</span>还没有任何数据。<br>每天 08:30 自动更新；也可以在项目目录运行 <code>node collect.mjs</code> 立即生成。</div>`;
   }
+}
+
+function setSection(sec) {
+  state.section = sec;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.sec === sec));
+  if (sec === 'frontier') {
+    loadFrontier();
+  } else if (IDEAS_DATA) {
+    state.data = IDEAS_DATA;
+    render();
+  } else if (IDX.length) {
+    loadDay(IDX[0].date);
+  }
+}
+
+async function loadFrontier() {
+  state.data = null;
+  $('#day-title').textContent = '前沿关注';
+  $('#feed-meta').textContent = '';
+  $('#chip-row') && ($('#chip-row').innerHTML = '');
+  $('#content').innerHTML = '<div class="empty">加载中…</div>';
+  try {
+    state.data = await (await fetch('data/frontier-latest.json')).json();
+  } catch {
+    $('#content').innerHTML = `<div class="empty">还没有前沿关注数据。<br>每天 08:30 会自动检查这 8 个公众号的更新；也可以在项目目录运行 <code>node frontier.mjs</code> 立即检查。</div>`;
+    return;
+  }
+  render();
 }
 
 // 标题下一行的日期信息 + 前后日切换
@@ -58,6 +88,7 @@ async function loadDay(date) {
   const url = date === 'sample' ? 'data/sample-20.json' : `data/${date}.json`;
   try {
     state.data = await (await fetch(url)).json();
+    IDEAS_DATA = state.data;
   } catch {
     $('#content').innerHTML = '<div class="empty">这一批数据加载失败。</div>';
     return;
@@ -66,6 +97,7 @@ async function loadDay(date) {
 }
 
 function render() {
+  if (state.section === 'frontier') { renderFrontier(); return; }
   const d = state.data;
   const gen = d.generatedAt ? new Date(d.generatedAt).toLocaleString('zh-CN', { hour12: false }) : '';
   if (d.date === 'sample') {
@@ -86,8 +118,46 @@ function render() {
 
   const topScore = Math.max(...ideas.map(x => x.score ?? x.funScore ?? 0));
   $('#content').innerHTML =
+    (d.notice ? `<div class="info-banner">ℹ ${esc(d.notice)}</div>` : '') +
     (d.warnings && d.warnings.length ? `<div class="warn-banner">⚠ ${esc(d.warnings.join('；'))}</div>` : '') +
     ideas.map(x => cardHTML(x, (x.score ?? x.funScore) === topScore)).join('');
+}
+
+function renderFrontier() {
+  const d = state.data;
+  const gen = d.generatedAt ? new Date(d.generatedAt).toLocaleString('zh-CN', { hour12: false }) : '';
+  const isToday = d.date === todayLocal();
+  $('#day-title').textContent = isToday ? '前沿关注 · 今天' : `前沿关注 · ${d.date.slice(5).replace('-', '/')}`;
+  const ch = d.channels || {};
+  $('#feed-meta').innerHTML =
+    `覆盖 ${(d.targets || []).length} 个公众号` +
+    `<span class="dot">·</span>本批分析 ${(d.items || []).length} 篇` +
+    `<span class="dot">·</span>发现通道：AIHOT${ch.rssConfigured ? ' + RSS 订阅' : '（RSS 未配置，覆盖有限）'}` +
+    (gen ? `<span class="dot">·</span>检查于 ${esc(gen)}` : '');
+  const items = d.items || [];
+  $('#content').innerHTML = items.length
+    ? items.map(frCardHTML).join('')
+    : `<div class="empty"><span class="big">📡</span>这一批没有发现这 8 个公众号的新文章。<br>发现通道：AIHOT 精选池（零星覆盖）${ch.rssConfigured ? ' + RSS 订阅' : ''}。想做到每天全覆盖：部署 we-mp-rss 后把 RSS 地址填进 .env 的 FRONTIER_RSS_URLS，或往 data/frontier-links.txt 里贴文章链接。</div>`;
+}
+
+function frCardHTML(x) {
+  return `
+  <div class="tl-item">
+    <span class="tl-dot"></span>
+    <article class="card">
+      <div class="card-head">
+        <span class="field">${esc(x.account)}</span>
+        <span class="src">${x.publishedAt ? esc(String(x.publishedAt).slice(0, 10)) : ''}</span>
+        ${x.analyzed ? '' : '<span class="grade warn-tag">未完整分析</span>'}
+      </div>
+      <h2 class="card-title"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a></h2>
+      <div class="fr-block"><div class="fr-label">讲了什么</div><div class="fr-body">${esc(x.digest)}</div></div>
+      ${x.significance ? `<div class="fr-block"><div class="fr-label">有什么意义</div><div class="fr-body">${esc(x.significance)}</div></div>` : ''}
+      ${(x.applications || []).length ? `<div class="fr-block"><div class="fr-label">可以怎么用</div><ul class="fr-apps">${x.applications.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>` : ''}
+      ${(x.tags || []).length ? `<div class="tags">${x.tags.map(t => `<span class="tag ${TAG_CLS[t] || 't-other'}">${esc(t)}</span>`).join('')}</div>` : ''}
+      <div class="news-quote"><a href="${esc(x.url)}" target="_blank" rel="noopener">阅读原文 ↗</a><span class="nq-src">微信公众号 · ${esc(x.account)}</span></div>
+    </article>
+  </div>`;
 }
 
 function cardHTML(x, isTop) {

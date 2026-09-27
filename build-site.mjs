@@ -15,7 +15,8 @@ for (const f of ['index.html', 'style.css', 'app.js']) {
 // 数据：归档索引 + 样例 + 每日数据
 const dataDir = path.join(ROOT, 'data');
 for (const f of fs.readdirSync(dataDir)) {
-  if (f === 'index.json' || /^\d{4}-\d{2}-\d{2}\.json$/.test(f) || f === 'sample-20.json') {
+  if (f === 'index.json' || f === 'sample-20.json' || /^\d{4}-\d{2}-\d{2}\.json$/.test(f) || /^frontier-/.test(f)) {
+    if (f === 'frontier-seen.json') continue; // 内部去重状态不公开
     fs.copyFileSync(path.join(dataDir, f), path.join(site, 'data', f));
   }
 }

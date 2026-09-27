@@ -3,6 +3,8 @@ cd /d "%~dp0"
 if not exist logs mkdir logs
 echo ===== %date% %time% ===== >> logs\collect.log
 node collect.mjs >> logs\collect.log 2>&1
+echo ===== %date% %time% 前沿关注 ===== >> logs\frontier.log
+node frontier.mjs >> logs\frontier.log 2>&1
 echo ===== %date% %time% 部署站点 ===== >> logs\deploy.log
 node build-site.mjs >> logs\deploy.log 2>&1
 git -C site add -A >> logs\deploy.log 2>&1

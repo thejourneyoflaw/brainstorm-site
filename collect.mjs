@@ -34,6 +34,10 @@ async function main() {
     warnings.push(`AI 策展失败: ${e.message}`);
   }
 
+  // 前沿关注由 frontier.mjs 独立跑（run-daily.bat 里排在 collect 之后）
+
+  const notice = ideas && ideas.length < 10 ? `今天达标 ${ideas.length} 条（目标 10，其余未过审或候选不足）` : null;
+
   const record = {
     date,
     generatedAt: new Date().toISOString(),
@@ -41,6 +45,7 @@ async function main() {
     sourceCount: candidates.length,
     sourceCounts: counts,
     ideas,
+    notice,
     review: ideas ? {
       models: [...new Set(ideas.map(i => i.review?.model).filter(Boolean))],
       approved: ideas.filter(i => i.review?.approved).length,
