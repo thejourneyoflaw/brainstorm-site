@@ -2,7 +2,7 @@ name: Daily Brainstorm
 
 on:
   schedule:
-    - cron: '30 0 * * *'   # UTC 00:30 = 北京时间 08:30
+    - cron: '30 0 * * *'   # UTC 00:30 = UTC+8 08:30
   workflow_dispatch: {}
 
 permissions:
@@ -16,6 +16,8 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    env:
+      LLM_PREFER: BIGMODEL,SENSENOVA
     steps:
       - uses: actions/checkout@v4
 
@@ -23,9 +25,7 @@ jobs:
         with:
           node-version: '22'
 
-    env:
-      LLM_PREFER: BIGMODEL,SENSENOVA
-      - name: 写入运行配置（密钥来自 Secrets）
+      - name: write run config from secrets
         run: |
           cat > .env <<ENVEOF
           DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
@@ -40,13 +40,13 @@ jobs:
           ENVEOF
           printf '%s' "${{ secrets.PROFILE_TEXT }}" > profile.md
 
-      - name: 采集 + AI 策展（今日脑洞）
+      - name: collect (today's ideas)
         run: node collect.mjs
 
-      - name: 前沿关注（公众号更新检查）
+      - name: frontier (official accounts check)
         run: node frontier.mjs
 
-      - name: 提交数据
+      - name: commit data
         run: |
           git config user.name "brainstorm-bot"
           git config user.email "actions@users.noreply.github.com"
