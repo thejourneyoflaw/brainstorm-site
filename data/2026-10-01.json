@@ -1,0 +1,406 @@
+{
+  "date": "2026-10-01",
+  "generatedAt": "2026-10-01T23:59:16.238Z",
+  "model": "deepseek-v4-flash",
+  "sourceCount": 67,
+  "sourceCounts": {
+    "aihot": 81,
+    "aibot": 7
+  },
+  "ideas": [
+    {
+      "rank": 1,
+      "title": "自组织智能体对照实验",
+      "field": "技术",
+      "idea": "Ethan Mollick 在 One Useful Thing 发文，公开承认自己此前判断错了：他原以为人类需要像经理一样精心设计智能体组织，现在认为 Bitter Lesson 同样适用于组织管理，让智能体自组织会胜过人为编排。他给的是一个判断，没人给出可复现的对照实验。那就做这个实验：同一批合同初审任务，A 组用人类设计的层级流水线（抽取、规则校验、复核），B 组只给一组同构智能体一个共享任务队列和一个评分反馈，不给任何角色分工，比较准确率、每份成本和总耗时。先拿 SEC EDGAR 公开合同搭任务集，定义五个客观评分点，跑通后再扩展到真实业务合同。",
+      "plan": [
+        "今晚：从 SEC EDGAR 的 exhibit 10 系列挑 30 份真实合同，定义 5 个客观评分点（付款期、自动续约、单方解约、管辖法院、赔偿上限），存成 JSONL 任务集。",
+        "用 OpenRouter 调同一个便宜模型跑 A 组固定流水线：先抽取字段、再做规则校验、最后复核，逐份记录 token 与耗时。",
+        "搭 B 组：写一个共享任务队列加评分函数，每个智能体只看到队列和上一轮得分，不设角色指令，跑同一任务集。",
+        "比较三组指标：准确率、每份成本、总耗时；把 prompt、代码、原始输出全部开源。",
+        "写报告时先列失败案例，重点检查自组织组是否出现任务重复认领或集体沉默，给出失败模式清单。"
+      ],
+      "deliverable": "一个开源实验仓库：含任务集、两套智能体代码、运行日志和 A/B 对照报告。",
+      "risk": "单次实验样本量小、噪声大，结论可能只是随机波动，自组织组也容易空转或撞车。",
+      "tags": [
+        "多智能体",
+        "组织形态",
+        "实验"
+      ],
+      "news": {
+        "title": "Ethan Mollick 谈点与群：智能体自组织为何让管理假设失效",
+        "url": "https://www.oneusefulthing.org/p/the-dot-and-the-swarm",
+        "source": "AIHOT · Ethan Mollick：One Useful Thing（RSS）",
+        "aihotUrl": "https://aihot.news/items/i35lar26hjm4djheowz5ytplm"
+      },
+      "score": 72,
+      "verdict": {
+        "novelty": 16,
+        "usefulness": 13,
+        "feasibility": 17,
+        "timing": 12,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "正面挑战 Mollick 的判断，实验设计干净，但自组织组大概率空转或撞车，结论"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 2,
+      "title": "AI 法律工具成本底牌",
+      "field": "商务",
+      "idea": "OpenRouter 发布一个三步选型框架：先给任务设质量门槛，再用 20 到 50 个真实任务逐一测试，选出成本最低的达标模型，而不是按排行榜挑最高分。同期 Artificial Analysis 数据显示，GPT-6.1 Sol 每任务成本约 0.72 美元，比 GPT-6 Sol 的 1.05 美元低约三成。这两条放一起，可以做一件少有人做的事：反推法律 AI 产品的毛利空间。NDA 初审这类任务单次推理成本不到一美元，市面产品却按份或按席位收到几十到几百美元，中间差价有多大、哪些任务值得自建，都能算个大概。支撑这个判断的机制是选型框架本身——它的质量门槛设定法可以原样套用，把「质量达标」先定义成「抽出的关键条款与人工核对一致」，避免陷入参数竞赛。对懂点金融的法务来说，这份成本账比产品演示有用得多，因为自建与采购的边界可以直接用数据说话。",
+      "plan": [
+        "列出 10 个法律任务（NDA 初审、劳动仲裁答辩初稿、合同要素抽取等），每个定义质量门槛如「关键条款抽取准确率不低于 90%」，产出任务与门槛清单",
+        "为每个任务准备 5 到 8 个真实样本，来源选公开裁判文书脱敏文本、自备合同范本、开源数据集如 CAIL，产出标注好答案的测试集",
+        "用两到三个模型（GPT-6.1 Sol、GPT-6 Sol、其他开源模型）按框架跑一遍样本，记录 token 消耗与推理成本，产出每任务每模型的成本表",
+        "抓三家以上法律 AI 产品的公开定价（官网或报价页），换算成单任务价格，与实测成本做差，产出毛利区间估算表",
+        "写成测算分析，明确区分推理成本与人工复核成本、责任承担成本，标注结论适用边界，发布为可分享的对比表"
+      ],
+      "deliverable": "一张任务成本对产品定价的对比表，加一篇测算分析",
+      "risk": "忽略人工复核、责任承担与合规成本会严重高估毛利，结论容易被业内人反驳。",
+      "tags": [
+        "成本测算",
+        "定价",
+        "法律科技"
+      ],
+      "news": {
+        "title": "OpenRouter 发布 Agent 模型成本与质量权衡选型框架",
+        "url": "https://openrouter.ai/blog/insights/cost-vs-quality-tradeoff-framework-for-agent-models/",
+        "source": "AIHOT · OpenRouter：Announcements（RSS）",
+        "aihotUrl": "https://aihot.news/items/v6j23p9krwwoxqvk05d9n0bfz"
+      },
+      "score": 72,
+      "verdict": {
+        "novelty": 12,
+        "usefulness": 15,
+        "feasibility": 19,
+        "timing": 12,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "毛利算得漂亮，先说说样本从哪来。"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 3,
+      "title": "合成条款库回归门禁",
+      "field": "法律",
+      "idea": "OpenRouter 发布官方教程，展示把固定 eval 集接进 CI 的做法：通过率低于阈值时脚本以非零退出码挡住 pull request，和单元测试门禁同一套路。法务改合同条款基本靠拍脑袋，改完不知道波及多少已签合或谈判筹码。把合同条款库当代码库来管，给条款准备一套不许随手改的测试集，就能把「改动影响面」变成可见数字。但与科技公司不同，法务手里的真实合同涉及客户隐私和商业机密，直接做成 eval 集有合规风险。对策是测试集全部采用自行编写的合成合同片段，不碰任何真实数据。具体做法：按违约金、保密、解约条件等高风险条款类型，人工编写 20 段带预期结论的合成文本作为回归基线；条款库用 git 管理，任何修改必须先跑分，低于阈值就拦在发布前。这套机制让条款变更从「凭感觉」变成「有门禁」。",
+      "plan": [
+        "今晚：列出合同中至少 5 类高风险条款类型，为每类编写 2 至 3 段合成合同片段及预期结论，存成纯文本 eval 集文件，全程不含真实合同数据。",
+        "本周：用 git 初始化条款库，每个条款单独一个 Markdown 文件，并补上变更说明模板（含修改理由、影响范围预期）。",
+        "写回归脚本：用 Python 调任一模型 API（如 GLM-4-Flash），对每条合成片段让模型判断是否触发对应条款，与预期结论比对，输出通过失败清单。",
+        "配置 CI 门禁：在 GitHub Actions 中定义 workflow，运行上述脚本，通过率低于 90% 时以非零退出码拒绝合并，产出 CI 配置文件。",
+        "演练一次：挑一个条款做一次修改，跑回归，把跑分报告和变更说明绑定提交，形成第一个门禁案例。"
+      ],
+      "deliverable": "一个不含真实数据的合成 eval 集、git 化条款库、CI 门禁配置，以及一次真实条款修改的首份跑分报告。",
+      "risk": "合成片段与真实合同场景存在差距，eval 集覆盖面不足会导致门禁形同虚设；模型判断也可能出现偶发误报。",
+      "tags": [
+        "合同",
+        "法务效率",
+        "流程改造"
+      ],
+      "news": {
+        "title": "OpenRouter 教程：如何在 CI 中用 LLM eval 门禁拦截 Pull Request",
+        "url": "https://openrouter.ai/blog/tutorials/how-to-gate-pull-requests-on-llm-evals-in-ci/",
+        "source": "AIHOT · OpenRouter：Announcements（RSS）",
+        "aihotUrl": "https://aihot.news/items/ska7k3allx8q9uu8yv5vzy8zw"
+      },
+      "score": 70,
+      "verdict": {
+        "novelty": 14,
+        "usefulness": 16,
+        "feasibility": 18,
+        "timing": 10,
+        "fit": 12,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "把代码门禁搬到条款库，搬运思路直接，但合同语义的判定根本不能当单测来写，二十份样"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    },
+    {
+      "rank": 4,
+      "title": "自报置信度校准实测",
+      "field": "法律",
+      "idea": "OpenRouter 的教程讲了一招：让便宜模型用结构化输出返回 0 到 1 的置信度，低置信度的请求再升级到更强模型。文章特别提醒，这个分数是模型自报的，不是校准过的概率，必须拿自己的数据重新量。法律场景正缺这一量。合同审阅、文书分类、证据归档，大家都想按低置信度转人工，可没人知道模型说 0.9 的时候真实准确率是多少。可以自己做一次校准：拿两三百份真实合同段落或裁判文书片段，让廉价模型同时给标签和置信度，人工核对后画出可靠性曲线，重点找高置信却判错的那一段区间。",
+      "plan": [
+        "本周：从历史项目抽取 200 段合同条款或文书片段，做好脱敏，标注正确标签，存成表格。",
+        "用同一批数据跑 2 到 3 个不同价位的模型，要求结构化输出标签加 0 到 1 置信度，逐条记录结果。",
+        "人工核对后按置信度分桶（0.5 以下、0.5 到 0.7、0.7 到 0.9、0.9 以上）算每桶真实准确率，画出校准曲线。",
+        "依据曲线定升级阈值与人工复核线，写成一份只在内部使用的一页纸规则。",
+        "挑一个真实批量任务试跑一个月，记录人工复核量和漏检数，回来修阈值。"
+      ],
+      "deliverable": "一张按置信度分桶的准确率校准曲线，加一页纸复核阈值规则，可直接贴进现有审阅流程。",
+      "risk": "某个任务的校准结果换到另一个任务就不成立，照搬会漏掉真正的高置信错误。",
+      "tags": [
+        "合同",
+        "证据",
+        "AI评测"
+      ],
+      "news": {
+        "title": "OpenRouter 指南：用置信度阈值实现模型分级升级路由",
+        "url": "https://openrouter.ai/blog/insights/confidence-thresholds-for-model-escalation-routing/",
+        "source": "AIHOT · OpenRouter：Announcements（RSS）",
+        "aihotUrl": "https://aihot.news/items/hi9uy4borcat6ams9rk5vkamo"
+      },
+      "score": 69,
+      "verdict": {
+        "novelty": 11,
+        "usefulness": 16,
+        "feasibility": 19,
+        "timing": 10,
+        "fit": 13,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "校准曲线是正确方向，但自报置信度校准早已是行业常规功课，你只是补做了一次自家数据"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 5,
+      "title": "Agent单任务成本定价周报",
+      "field": "金融",
+      "idea": "Artificial Analysis 数据显示，GPT-6.1 Sol 每任务成本约 0.72 美元，较 GPT-6 Sol 的 1.05 美元低约 30%，Gemini 4 Argon (High) 的每任务成本约 0.62 美元。这些数字平时只被当跑分看，但做 AI 产品报价的人真正想知道的是「同一件业务换模型能省多少、对外最低能压到哪」。本项目把 20 个自己业务中的真实任务（合同摘要、票据字段抽取、客服问答）固定成测试集，用 OpenRouter 逐模型跑批，记录 token 花费与通过率；按通过率不低于 85% 的门槛筛出达标模型，取其中的最低单任务成本作为定价地板，乘 3 就是对外报价底线。固定测试集保证不同周可比，每次记录日期与模型版本，价格波动不会让对比失真；周报既能对客户展示定价依据，也能兼做同业的价格行情哨兵。",
+      "plan": [
+        "今晚从手头脱敏合同、票据、客服记录里挑出 20 个任务，为每个写出标准答案，制成固定测试集（Markdown + CSV）",
+        "写 Python 脚本调用 OpenRouter API 同时跑 4 到 6 个模型，记录 token 花费与通过率，输出带日期与版本号的 csv",
+        "按通过率 85% 门槛筛出达标模型，计算每个任务的最低达标成本，生成定价地板",
+        "每周同一时间重跑一次，用同一脚本生成一页周报：价格线变动、谁涨价、谁降价，导出可分享链接",
+        "把定价地板乘 3 写进对外报价备注，连跑 4 周后复盘是否值得做成订阅产品"
+      ],
+      "deliverable": "一份 OpenRouter 跑批脚本加固定 20 任务测试集，外加首周一页定价表，先在一个业务上跑通",
+      "risk": "模型价格与免费额度变动频繁，历史对比容易失真，需每次记录日期与版本号并定期校准测试集，否则维护成本会反噬",
+      "tags": [
+        "定价",
+        "AI产品"
+      ],
+      "news": {
+        "title": "Artificial Analysis：GPT-6.1 Sol 的 Cost per Task 较 GPT-6 Sol 低约 30%",
+        "url": "https://x.com/ArtificialAnlys/status/2105449959554441580",
+        "source": "AIHOT · X：Artificial Analysis (@ArtificialAnlys)",
+        "aihotUrl": "https://aihot.news/items/p3cwq54s9gugqpmljv3xm97lv"
+      },
+      "score": 68,
+      "verdict": {
+        "novelty": 12,
+        "usefulness": 14,
+        "feasibility": 17,
+        "timing": 13,
+        "fit": 12,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "把跑分转成报价线是一招好棋，但周报只有你自己看，模型价格变动频繁后维护成本会反噬"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 6,
+      "title": "期限巡检与逾期预案",
+      "field": "法律",
+      "idea": "Factory 宣布 Automations 正式开放：用户用自然语言描述工作流后，Droid 可以按定时、或由 Slack、GitHub、webhook 触发自动执行，还能自选模型。法务真正高频的风险不是写不出文书，而是期限漏项——举证期、上诉期、答辩期、再审期间、仲裁时效，哪一个错过都要付出实打实的代价。这个资讯真正值钱的地方在于「触发执行」：把判决书、裁决书里散落的期限条款抽成结构化表，逐个算出到期日，再自动附上一句如果已经逾期，还剩哪条救济路径、要准备什么理由模板。提醒让人知道要出事，预案让人知道出事了还能干什么，这中间的差价就是价值。用 Factory 的定时触发扫案件表，7 日内到期推 Slack，配合 LLM 抽取和规则校验，第一周就能把原型跑通。",
+      "plan": [
+        "本周整理期限类型清单：举证期限、上诉期、答辩期、申请再审期间、劳动仲裁时效，逐条标注起算规则与常见例外，产出规则对照表",
+        "拿 10 份脱敏判决书做抽取测试，用 LLM 抽期限条款与日期，人工核对并记录错误类型，产出错误清单与修复提示词",
+        "在 Factory 上配一条定时工作流：每天早八点扫描案件表（Airtable 或飞书多维表格），计算 7 日内到期案件并推送到 Slack，产出可运行的自动巡检流程",
+        "为每类期限写一段逾期救济话术模板（如上诉期过后可尝试再审、执行异议等），输出强制附上「非正式法律意见，需人工复核」提示，产出模板库",
+        "跑满一个案件周期（至少一个月），统计漏报与误报数，根据错误类型调整起算规则，产出巡检准确率报告"
+      ],
+      "deliverable": "一份期限类型对照表，加一个每日自动推送的巡检工作流与逾期救济模板库",
+      "risk": "起算规则在个案中常有例外，自动提醒必须标记需人工复核，否则漏算上诉期将构成执业风险。",
+      "tags": [
+        "诉讼",
+        "自动化",
+        "期限"
+      ],
+      "news": {
+        "title": "Factory Automations 正式开放：Droid 可定时或按事件自动执行工程工作流",
+        "url": "https://factory.ai/news/automations",
+        "source": "AIHOT · Factory 研究 / 产品（RSS）",
+        "aihotUrl": "https://aihot.news/items/u33r5t71q9fo30jygm4iqnfm4"
+      },
+      "score": 68,
+      "verdict": {
+        "novelty": 9,
+        "usefulness": 17,
+        "feasibility": 17,
+        "timing": 12,
+        "fit": 13,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "漏一个上诉期，模板库救不了执业险。"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 7,
+      "title": "蒸馏攻击取证清单",
+      "field": "法律",
+      "idea": "OpenAI 称七月拦下一桩针对模型推理链的蒸馏窃取：24 至 25 日来自 4000 多个账号的约 16000 次请求，关联账号超 15000 个；The Decoder 随后指同样手法在 Azure 上仍能窃取 GPT-6 Astra 等模型的推理内容。大规模抓取推理输出，法律定性目前没有清晰判例，但法务能把手伸到的是把「攻击行为」变成「可采证据」。本项目把报道中的行为特征翻译成取证字段：账号 ID、IP、时间戳、请求体摘要、响应摘要、会话指纹，落成一份日志缺口对照表——先列理想字段，再让技术团队比对现有日志，标出哪些根本没留存；用模拟请求生成示例日志，验证字段够不够用。最终交付三页备忘录，只写商业秘密与反不正当竞争两条最可能走得通的路径，各附构成要件、举证难点与损害计算方法。",
+      "plan": [
+        "今晚读完 OpenAI 与 The Decoder 两篇原文，摘出所有可观测行为特征，做成「特征—法律要件」两列表（Markdown）",
+        "本周把特征落成取证字段清单 CSV：账号 ID、IP、时间戳、请求体摘要、响应摘要、会话指纹，标注必填与可选",
+        "发给技术团队比对现有日志，标记哪些字段当下收不到，输出日志缺口对照表",
+        "在自有测试环境用 Python 模拟 10 分钟蒸馏式请求流，生成一份与字段清单对应的示例日志，验证字段可采集性",
+        "写三页备忘录：商业秘密与反不正当竞争两路径的构成要件、举证难点、损害计算，附三个相近判例",
+        "把整套材料交给一家 AI 公司法务试用，收集反馈后出第二版"
+      ],
+      "deliverable": "一份取证字段 CSV 模板加日志缺口对照表，外加三页法律定性备忘录与模拟请求生成的示例日志",
+      "risk": "蒸馏法律定性在判例上仍是空白，备忘录只能作为内部论证框架；模拟攻击需在自有或授权环境进行，以免触碰服务条款",
+      "tags": [
+        "证据",
+        "合规",
+        "商业秘密"
+      ],
+      "news": {
+        "title": "OpenAI 称拦截蒸馏窃取攻击，但研究者称同样手法在 Azure 上仍可窃取 GPT-6 Astra 等模型的推理内容",
+        "url": "https://the-decoder.com/openai-says-it-stopped-a-campaign-to-steal-its-models-reasoning-but-the-trick-still-worked-on-azure/",
+        "source": "AIHOT · The Decoder：AI News（RSS）",
+        "aihotUrl": "https://aihot.news/items/uxe9v0hypn93df9ogn6glwled"
+      },
+      "score": 67,
+      "verdict": {
+        "novelty": 15,
+        "usefulness": 14,
+        "feasibility": 13,
+        "timing": 13,
+        "fit": 12,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "证据清单和日志缺口对照是务实起点，但法律定性最后大概率卡在取证不能，备忘录只能当"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 8,
+      "title": "机器人替代的两轴错价表",
+      "field": "金融",
+      "idea": "Anthropic 用 Claude 对约 19000 项工作任务评估了机器人暴露度，结论是现今机器人可完成美国 74% 的物理任务、占全部工作时间的 34%，但只有 0.3% 具备成本竞争力。做投研的话，关键数字不是 74% 而是 0.3%——它标出了替代尚未发生的那段时间差，市场却常把前者直接当后者定价。可以拿 Anthropic 公开的任务暴露度，映射到上市公司年报里的岗位与任务构成，再叠人均薪酬，做一张两轴表：横轴是任务可替代比例，纵轴是当前单位任务的人力成本与机器人成本之比。落在右下角（可替代高、人力便宜）的公司是被高估的替代故事，左上角则是被低估的、人力贵到值得先自动化的环节。",
+      "plan": [
+        "本周下载 Anthropic 公开的任务暴露度数据，先只挑 3 个制造业细分行业做映射试点",
+        "把行业任务构成对应到 O*NET 或年报披露的岗位人数，手工核一遍映射关系",
+        "查这 3 个行业主要上市公司的人均薪酬与劳务外包支出，算单位任务人力成本",
+        "把 0.3% 成本竞争力阈值做成一条参考线，画出两轴散点图，标注 5 家公司",
+        "写成一篇 2000 字以内的研究笔记，明确写出这只是筛选线索而非买卖建议"
+      ],
+      "deliverable": "一张两轴散点图加一份 5 家公司的备注表，最先交付行业映射的 Excel",
+      "risk": "任务到公司的映射链条太长，任何一个环节的假设被推翻，结论都会失真",
+      "tags": [
+        "投研",
+        "自动化"
+      ],
+      "news": {
+        "title": "Anthropic 研究测算机器人对岗位的暴露度：机器人可做 74% 的物理任务但仅 0.3% 具备成本竞争力",
+        "url": "https://www.anthropic.com/research/what-work-can-robots-do",
+        "source": "AIHOT · Anthropic：Research（发表成果 · 网页）",
+        "aihotUrl": "https://aihot.news/items/lzxm86234leqs91hbocegps1l"
+      },
+      "score": 66,
+      "verdict": {
+        "novelty": 15,
+        "usefulness": 14,
+        "feasibility": 12,
+        "timing": 13,
+        "fit": 12,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "0.3% 与 74% 的时间差确实值得玩味，但任务到年报岗位的映射全是手工毛估，"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:SENSENOVA",
+        "fallback": true
+      }
+    }
+  ],
+  "notice": "今天达标 8 条（目标 10，其余未过审或候选不足）",
+  "review": {
+    "models": [
+      "回退:SENSENOVA",
+      "agnes-2.0-flash"
+    ],
+    "approved": 8,
+    "total": 8
+  },
+  "fallback": null,
+  "warnings": []
+}

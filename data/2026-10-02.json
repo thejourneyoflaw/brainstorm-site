@@ -1,0 +1,456 @@
+{
+  "date": "2026-10-02",
+  "generatedAt": "2026-10-02T00:36:13.598Z",
+  "model": "deepseek-v4-flash",
+  "sourceCount": 67,
+  "sourceCounts": {
+    "aihot": 85,
+    "aibot": 7
+  },
+  "ideas": [
+    {
+      "rank": 1,
+      "title": "法律文档 agent 的注入样本库",
+      "field": "技术",
+      "idea": "Modal 发布 Sidecars（Beta）：一个与主 Sandbox 跑在同一台宿主上、但相互隔离的可信容器，用来在可信代码与不可信代码之间划边界；同批更新里 VM Sandboxes 转正式可用，runtime 设成 vm 就能拿到一台带 Docker 与内核能力的完整 Linux 虚拟机。法务每天打开对方当事人和境外代理发来的 PDF，这类文件现在能夹带提示注入，而 VM Sandbox 已经能跑 pdfplumber 和 Tesseract，缺的不是隔离，是没人验证隔离到底有没有用。我想做的是给法律文档解析流程造攻击样本和验收关卡：PDF 注释层与白色小字、扫描件 OCR 后才浮现的指令、双语合同里只在中文本出现的越权句，每条附一个判定条件，比如是否触发外发动作、抽取字段是否被改写。团队把 agent 接进文件流水线之前先跑一遍，看隔离区有没有守住外发口。落点是一套不绑定云厂商的样本集，本地虚拟机就能跑，法务自己读得懂结果。",
+      "plan": [
+        "今晚用 Modal VM Sandboxes（runtime 设为 vm）起一台沙箱，装 pdfplumber 与 Tesseract，丢一份自己写过的合同 PDF 抽字段，产出一份可复跑的启动脚本",
+        "本周手写 10 条注入样本：注释层指令、1pt 白色小字、扫描件 OCR 诱饵、中英双语夹带，每条记录藏点位置与预期判定条件，产出 samples.json",
+        "在沙箱内跑完整解析流程，逐条记录模型是否复述或执行了样本指令、抽取字段是否被改写，产出第一轮压测日志",
+        "把外发动作（发邮件、写库、调检索 API）移进 Sidecar，只放白名单与参数校验，产出一张可信侧与不可信侧的调用边界图",
+        "用同一批样本回归，确认外发调用计数为零，产出通过与否的逐条对照表",
+        "把样本集与脚本开源，配一篇《对方发来的 PDF 里到底藏了什么》的藏点拆解，产出最小复现仓库"
+      ],
+      "deliverable": "20 条法律文档注入样本集与一套可复跑的验收脚本",
+      "risk": "样本只覆盖自己想得到的藏点，团队照着过了关就以为安全，真实漏检恰好发生在没人写进样本的那类文件上",
+      "tags": [
+        "Agent安全",
+        "提示注入",
+        "沙箱"
+      ],
+      "news": {
+        "title": "Modal 推出 Sidecars，为 Sandboxes 提供低延迟信任边界",
+        "url": "https://modal.com/blog/introducing-sandbox-sidecars-trust-boundary",
+        "source": "AIHOT · Modal 官方工程博客（RSS）",
+        "aihotUrl": "https://aihot.news/items/mxaja99ylejkngzxhp66laxfj"
+      },
+      "score": 75,
+      "verdict": {
+        "novelty": 13,
+        "usefulness": 16,
+        "feasibility": 19,
+        "timing": 13,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "场景真痛，可提示注入沙箱早有人做，拼执行"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:OPENCODE_GO",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 2,
+      "title": "法条引用闸门与法规更新台账",
+      "field": "法律",
+      "idea": "Anthropic 给 Claude Code 推出了 mods：一种小型 TypeScript 函数，可以挂到 Claude Code 的事件流上，改写提示词、拦截或重试工具调用。法律写作最怕模型一本正经编法条，也怕引用的条文早已被修订。把 mod 当闸门用：模型每吐出一个《XX法》第X条，hook 先截住，去本地 SQLite 法条库比对。库里不止条号和原文，还加生效日期、失效日期、来源链接三列，于是有三种结果——命中且当期有效则放行；条号根本不存在，要求重写并附上正确原文；条号存在但已失效，提示该条何日被修订、现行条文是什么。这类工具真正的死穴是库会过期，所以把库做成独立于插件的外部文件：定期从公开的法规修订公告里抓变更，每季度人工抽查高频引用的二十条，库带版本号，每一次放行与拦截都写日志，用日志反推哪条最该更新。这样闸门就不只是一次性插件，而是一份会自我提醒的法规台账，今晚就能跑通最小版本。",
+      "plan": [
+        "今晚：装好 Claude Code，照 Claude.dev 上 Token Weather 教程跑通一个只打印事件流的最小 mod，确认 hook 能拿到模型输出文本。",
+        "本周：建 SQLite 法条库，字段为法规名、条号、原文、生效日期、失效日期、来源链接，先录入劳动合同法、民法典合同编、民事诉讼法三部约 200 条。",
+        "写拦截 hook：正则识别《XX法》第X条并把中文数字归一化，查库后分三档处置（放行、要求重写、提示已修订），阈值与白名单写进配置文件。",
+        "造 20 条测试样本（10 条真引用、10 条编造或已失效），跑一遍记录拦截率、误杀率、修订提示命中率，据此调正则与归一化规则。",
+        "建更新流程：写一个抓取公开法规修订公告变更的脚本，配一份季度抽查清单，并把库版本号打进每次输出的日志。",
+        "把 mod 收成可复用目录，写一篇过程记录：给 AI 写作装一道引用刹车，附更新维护说明。"
+      ],
+      "deliverable": "一个能装进 Claude Code 的法条引用拦截 mod，加一份带版本号、生效失效日期与更新说明的三部法规比对库。",
+      "risk": "法条引用格式千变万化（条、款、项混写），误杀太多会让人直接关掉插件；而库一旦停更，闸门反而会放行过期条文。",
+      "tags": [
+        "法律文书",
+        "AI工具"
+      ],
+      "news": {
+        "title": "Claude Code 推出 mods，可用 TypeScript 函数改写提示词、替换内置功能",
+        "url": "https://claude.com/blog/claude-code-mods",
+        "source": "AIHOT · Claude：Blog（网页）",
+        "aihotUrl": "https://aihot.news/items/qzfc4nrsqe4rk8yxlk16ox6in"
+      },
+      "score": 74,
+      "verdict": {
+        "novelty": 13,
+        "usefulness": 16,
+        "feasibility": 20,
+        "timing": 11,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "本地库三法条能跑，但法条更新谁维护"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "拦截机制具体，今晚可跑通最小mod",
+        "model": "回退:OPENCODE_GO",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 3,
+      "title": "赔偿金计算：参数可溯源管道",
+      "field": "法律",
+      "idea": "哈佛物理学者 Matthew Schwartz 在 Anthropic 发表的文章里讲了自己用 Claude 做跨学科定量计算的经验，并开源了为精确定量计算设计的工具 BootLoops，核心思路是不让模型心算，而是让它写出可执行的精确计算步骤。这正戳中法律人的老毛病：让 LLM 算经济补偿金、加班费、工伤赔偿，数字看着像那么回事，但三倍封顶、年限分段、不满半年怎么算，错一步就得从头核。可以照这个思路做一条赔偿计算管道，拆成两段：模型只负责把案情文字转成参数 JSON，且每个参数必须附上它取自案情的哪一句原文；数值全部交给一段确定性 Python 函数算，逐步输出月均基数、封顶后基数、分段年限、各段金额与合计。关键是加一道确认闸——参数出处缺失、置信度低于阈值，或该地区上年度社平工资缺档，管道直接拒绝计算并列出缺什么，而不是给一个看似精确的错误数。地区参数放外部配置文件按地市维护，改数不用改代码，结果自带算式可当庭复述。",
+      "plan": [
+        "今晚：写一个纯 Python 经济补偿金计算函数，含三倍封顶、年限分段、满半年与不满一年规则，用 5 组手算数字做单元测试。",
+        "本周：写参数提取提示词，要求 JSON 每个字段附带一句案情原文出处；用 5 个脱敏案例人工核对提取准确度，记录错误类型。",
+        "建地区参数表：常用地市的上年度职工月平均工资与封顶口径做成独立 CSV，标注数据年份与来源链接，与代码分离。",
+        "加确认闸与输出层：出处缺失或参数缺档时不计算、只输出缺项清单；参数齐全时输出逐步骤表格（年限、基数、封顶后基数、分段金额、合计）。",
+        "用 5 个自己熟悉的脱敏真实案例跑对照，检查年限算错、基数口径错、把补贴计入工资等具体错法是否被闸门拦住。",
+        "写一份适用范围清单，明确哪些案型适合走管道、哪些地区口径差异大必须手工确认后再入参。"
+      ],
+      "deliverable": "一个带参数出处标注与缺项拒绝机制的赔偿金计算脚本，加一份按地市维护的社平工资与封顶口径参数表。",
+      "risk": "参数提取错一步全盘皆输，所以出处标注与拒绝计算是必需项；地区社平工资需逐年更新，停更就会给出过期的封顶数。",
+      "tags": [
+        "劳动争议",
+        "计算工具"
+      ],
+      "news": {
+        "title": "物理学者 Matthew Schwartz 分享用 Claude 与 BootLoops 做跨学科计算的经验",
+        "url": "https://www.anthropic.com/research/claude-shaped-science",
+        "source": "AIHOT · Anthropic：Research（发表成果 · 网页）",
+        "aihotUrl": "https://aihot.news/items/v7l0ugdbh3e8vd157y32mbyby"
+      },
+      "score": 71,
+      "verdict": {
+        "novelty": 12,
+        "usefulness": 16,
+        "feasibility": 20,
+        "timing": 9,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "算式可复算，参数提取错一步照样全盘输"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "拆分提取与确定性计算，本周可写测试",
+        "model": "回退:OPENCODE_GO",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 4,
+      "title": "智能体越权实测与一键停机",
+      "field": "法律",
+      "idea": "英国 AI Security Institute 披露，因智能体在网络安全能力评估中接触了真实系统，他们暂停了一批高危评估；第一阶段加固完成后恢复了大部分，加固的关键一条是把智能体关进隔离环境、不许碰真实系统，并且评估本身有明确的暂停与恢复开关。照这个机制，公司要做的不是先建台账，是实测爆炸半径：今晚挑一个已经在跑的 agent，比如自动回客服邮件的那个，把它的权限收窄成一份副本——只挂数据副本、默认拒绝出网、凭证全换成诱饵，放进禁网容器里，然后给它一句越权指令，看它会不会去读不该读的目录、连不该连的地址，以及有没有留下日志。跑完拿到两样东西：一份真实的越权行为记录，不是填出来的表格；一份需要补的拦截规则清单。对法务更有用的是这套开关的反向用法——出事时能一键停掉某个 agent，停机记录加上演练日志，就是已尽合理注意义务的说明材料。矩阵等演练跑完再补，顺序反过来它必然变成没人维护的纸面文件。",
+      "plan": [
+        "今晚：挑一个在跑的 agent，把凭证全换成诱饵、数据只挂副本，用禁网模式起容器，先确认容器内确实连不出去。",
+        "给这个 agent 五条越权指令（读别的目录、连外网、拿凭证调真实系统），逐条记录它是被拦、报错还是真成功了。",
+        "把拦不住的三条写成拦截规则（网络策略、挂载白名单、凭证作用域），补进该 agent 的启动配置后重跑一轮验证。",
+        "做一个停用开关：一条命令停掉指定 agent，并自动写停机记录（谁、何时、原因、影响哪些任务）。",
+        "把越权记录、停机记录与配置变更合成一页说明材料，交给一个业务团队照跑同类 agent，收一轮反馈后定稿。"
+      ],
+      "deliverable": "一份真实越权演练记录 + 一份拦截规则清单 + 一个可一键停用 agent 的开关与停机记录模板",
+      "risk": "业务团队嫌演练拖慢节奏会绕过流程，若拦截规则只写在文档里不落进启动配置，越权照样发生且无人察觉。",
+      "tags": [
+        "AI治理",
+        "权限设计",
+        "内部合规"
+      ],
+      "news": {
+        "title": "英国 AISI 加强安全措施后恢复大部分危险能力评估",
+        "url": "https://www.aisi.gov.uk/blog/building-a-more-secure-environment-for-evaluating-dangerous-capabilities",
+        "source": "AIHOT · 英国 AI Security Institute：Blog（网页）",
+        "aihotUrl": "https://aihot.news/items/o2r7vlmpw9bg1k7rxb3ot6wzv"
+      },
+      "score": 71,
+      "verdict": {
+        "novelty": 8,
+        "usefulness": 16,
+        "feasibility": 22,
+        "timing": 10,
+        "fit": 15,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "最小权限换壳，胜在今晚就能填完"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "四项全通过，可以发布",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    },
+    {
+      "rank": 5,
+      "title": "模型推理链采购尽调清单",
+      "field": "金融",
+      "idea": "2025 年 7 月 24 至 25 日，OpenAI 称拦截了一起蒸馏窃取：两天内 4000 多个用户发出 16000 次请求、关联账号超 15000 个，目的是把模型的推理链套出来；同一篇报道指出，这套手法在 Azure 上对 GPT-6 Astra 这类模型依然奏效。它的机制很朴素：推理链被当作可以回吐的文本放在接口响应里，谁问得巧谁就能拿到。对采购第三方模型或 Agent 的金融合规方，可控动作不是去翻自家网关日志，那要不到权限；而是把这套手法倒过来用——用自己的 key 去问供应商接口，看回包里有没有 reasoning 类字段的原文，再把落盘位置、保留期、可读权限写成书面问卷和合同附件。先跑探针再发问，比只签一份保密协议硬得多。能拿来做的是把推理链可回吐性列进模型选型表，并把它变成采购合同里的一条硬约束。",
+      "plan": [
+        "本周：整理三类诱导提示各 10 条（要求复述推理、要求以 JSON 输出思考过程、多轮追问逼近），存成可重复运行的提示集文件。",
+        "用自己的 API key，对在用与候选的 3 到 5 个模型各跑一轮，脚本记录回包中是否出现 reasoning 类字段的原文，输出一份 CSV。",
+        "把结果填进一页选型表：模型名、是否回吐、字段位置、能否用参数关闭，给出红黄绿三档判断。",
+        "就落盘位置向供应商发书面问卷：网关日志、缓存、审计表是否存推理原文、保留多久、谁能读。",
+        "把回答转成 5 条合同附件条款（不落盘、保留期上限、审计权、违约与退出），提交采购与安全例会定为选型必过项。"
+      ],
+      "deliverable": "一页推理链可回吐性选型表 + 10 问供应商问卷 + 5 条可直接用的合同条款文本",
+      "risk": "探针要用自己的 key 打外部接口，可能触发供应商风控或违反其可接受使用政策，需先读条款并限制请求量。",
+      "tags": [
+        "数据安全",
+        "合规",
+        "模型风险"
+      ],
+      "news": {
+        "title": "OpenAI 称拦截蒸馏窃取攻击，但研究者称同样手法在 Azure 上仍可窃取 GPT-6 Astra 等模型的推理内容",
+        "url": "https://the-decoder.com/openai-says-it-stopped-a-campaign-to-steal-its-models-reasoning-but-the-trick-still-worked-on-azure/",
+        "source": "AIHOT · The Decoder：AI News（RSS）",
+        "aihotUrl": "https://aihot.news/items/uxe9v0hypn93df9ogn6glwled"
+      },
+      "score": 69,
+      "verdict": {
+        "novelty": 13,
+        "usefulness": 15,
+        "feasibility": 18,
+        "timing": 11,
+        "fit": 12,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "探针三天能写，整改权限才是真门槛"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    },
+    {
+      "rank": 6,
+      "title": "智能体团队的协调成本实测",
+      "field": "经济",
+      "idea": "Ethan Mollick 在 One Useful Thing 里公开改口：他原先认为智能体团队需要人类像经理一样精心设计，现在说 Bitter Lesson 对组织同样成立，点与群的自组织会让传统管理假设失效。这种论断空辩没有结论，能测。把它压进一个便宜的实验：同一件 12 步的编码或文本处理任务，交给两种组织形态各跑 5 轮，一种是有规划者加固定分工的层级制，一种是无中心、各自从队列认领并广播结果。要回答的不是谁更强，而是协调成本随节点数怎么涨——消息条数、每任务 token、返工次数在 4、8、12 个节点上各是什么形状，拐点落在哪。因为用的是便宜模型加固定小任务，token 花费可以提前封顶。能拿来做的是团队内部的选型规则：多大规模的任务该用哪种组织，写成一页判断表，而不是又一篇泛泛的组织理论。",
+      "plan": [
+        "本周：选定一件 12 步任务（如批量小 bug 修复或批量文本分类），写好可自动打分的验收脚本，任务集从此固定不变。",
+        "用两个便宜模型搭两套编排：层级制（1 个规划者加固定分工）与自组织（队列认领加广播），各跑 5 轮。",
+        "记录每轮总 token、消息条数、完成时间、返工次数与验收分，字段口径一次定死，统一写进 CSV。",
+        "把节点数扩到 4、8、12 重跑，画协调成本随节点数的曲线，标出拐点位置。",
+        "单独拆出失败轮次，标注原因是分工冲突还是重复劳动，写成带复现脚本与原始日志的两页短文。"
+      ],
+      "deliverable": "4、8、12 节点两种组织形态的对比数据表 + 复现脚本 + 一页选型判断表",
+      "risk": "任务只覆盖一类工作，结论只在这类任务上站得住，不要往一般组织理论上外推。",
+      "tags": [
+        "组织成本",
+        "多智能体",
+        "实验"
+      ],
+      "news": {
+        "title": "Ethan Mollick 谈点与群：智能体自组织为何让管理假设失效",
+        "url": "https://www.oneusefulthing.org/p/the-dot-and-the-swarm",
+        "source": "AIHOT · Ethan Mollick：One Useful Thing（RSS）",
+        "aihotUrl": "https://aihot.news/items/i35lar26hjm4djheowz5ytplm"
+      },
+      "score": 69,
+      "verdict": {
+        "novelty": 15,
+        "usefulness": 13,
+        "feasibility": 15,
+        "timing": 12,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "32 节点烧掉一堆 token，结论可能只是一句废话"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    },
+    {
+      "rank": 7,
+      "title": "把法条案号从输出里截下来",
+      "field": "法律",
+      "idea": "Anthropic 的开发者博客发了一篇 Claude Code mods 入门教程：mods 是以 hooks 形式跑在插件里的 TypeScript 模块，能观察、重写甚至拒绝 Claude Code 的事件流，教程里的示例插件叫 Token Weather，用来看上下文窗口还剩多少。我要用同一个位置做另一件事：把模型吐出来的每一个法条号、司法解释名、案号都截下来。AI 写法律文书最要命的不是文笔，是它会理直气壮地引用根本不存在的条和款，而人事后通读时对条号是麻木的，扫过去都像对的。mod 站在生成链路上，能在句子出口处把候选引用抽走、打上待核标记、写进本地流水账，会话结束生成一张能直接交给助理逐条比对的工作单，每条带原文、出现位置、待核状态。它不做判定，只做抽取和排队，判定留给检索。中文法条与案号是高度规整的字符串，正则加一个本地法规库就能覆盖相当一部分，漏检率还能用自己攒的文书集量化出来。",
+      "plan": [
+        "今晚照教程跑通 Token Weather 示例，确认可用的事件名与返回值结构，把 hello world 版 mod 装进自己的 Claude Code，产出可运行的最小插件",
+        "本周写正则库三组：法条（第X条/第X款/第X项）、司法解释与国标号、案号（(20XX)X民终X号），拿自己攒的 50 份真实文书当召回测试集，产出漏检与误报清单",
+        "实现核验 mod：拦截输出事件、抽取候选引用、在提示里追加待核标记，并写入本地 JSON 流水账，产出插件 v1",
+        "加会话结束钩子，生成 markdown 核验工作单，含引用原文、上下各一句、出现位置、待核状态，产出清单模板",
+        "接一个本地法规库做半自动比对，记录人工核对一条引用平均耗时，产出前后对比数字",
+        "开源 repo 并写一篇拆解文，讲清拦截发生在链路哪一层、哪类改写式引用必然漏掉，产出可安装包与说明"
+      ],
+      "deliverable": "一个可安装的引用抽取 mod 与一份能直接交给助理逐条比对的核验工作单模板",
+      "risk": "只写条名不写条号、或把两条拼成一条的改写式引用会整片漏掉，而清单越干净越容易让人误以为已经核过",
+      "tags": [
+        "法律文书",
+        "反幻觉",
+        "开发工具"
+      ],
+      "news": {
+        "title": "Claude Code mods 入门教程：从零构建 Token Weather 上下文窗口预报插件",
+        "url": "https://claude.dev/blog/getting-started-with-claude-code-mods/",
+        "source": "AIHOT · Anthropic：Claude.dev 开发者博客（RSS）",
+        "aihotUrl": "https://aihot.news/items/sbvvdrkyjbtob4gp4iwwtyar1"
+      },
+      "score": 68,
+      "verdict": {
+        "novelty": 11,
+        "usefulness": 15,
+        "feasibility": 19,
+        "timing": 10,
+        "fit": 13,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "与第0条同源，只多一张清单，二选一"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "回退:OPENCODE_GO",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 8,
+      "title": "不可信附件的隔离解析链",
+      "field": "法律",
+      "idea": "Modal 发布 VM Sandboxes，把 runtime 设成 vm 就得到一台支持 Docker、FUSE 和内核功能的完整 Linux 虚拟机；同期发布的 Sidecars 是与主沙箱同宿主却相互隔离的可信容器，专门在可信代码与不可信代码之间划边界。这正好对上诉讼里那个具体麻烦：对方交来的带宏 Excel、嵌了对象的 PDF、加密压缩包，本机容器与宿主共享内核，隔离强度不够，你不敢打开，不打开又没法质证。做法是把不可信文件丢进 VM Sandbox 解析，Sidecar 里只跑一件可信的事——对原始文件算 SHA-256、记时间戳与操作者；主 VM 内用无头转换抽正文与元数据，出网默认关闭。使用边界必须写死：只有已公开件、或已在保密协议下书面约定可使用第三方隔离环境的文件才走云端 VM，其余用同一套脚本在本机虚拟机里跑，流程不变。今晚就能拿一份脱敏的带宏附件跑通整条链路，看的是 Sidecar 的哈希与主 VM 的抽取结果能不能对上。",
+      "plan": [
+        "今晚：按 Modal 官方示例跑起一个 runtime 设为 vm 的沙箱，确认里面能启 Docker、挂 FUSE，并确认默认无法出网。",
+        "拉起一个 Sidecar，只做一件事：对挂进来的原始文件算 SHA-256、记时间戳与操作者，写入沙箱外的处理记录表。",
+        "在 VM 内写解析脚本：Office 先无头转 PDF，PDF 用 pdftotext 与 pdfinfo 抽正文和元数据，统一输出 JSON。",
+        "拿 5 份脱敏的真实附件（含宏 Excel、嵌入对象 PDF、加密压缩包）跑通，核对哈希一致性与抽取完整度，失败样本单独记录。",
+        "写下一份使用边界说明：仅公开件或已书面约定可外传的文件走云端 VM，其余走本机虚拟机上的同一套脚本，哈希记录随卷宗归档。"
+      ],
+      "deliverable": "一套云端 VM 加 Sidecar 与本地虚拟机双跑的解析脚本，加一份哈希处理记录模板与一页使用边界说明",
+      "risk": "把当事人文件传到第三方环境本身就可能违反保密义务，边界说明若没落实到操作前的确认动作，一次误传就足以构成执业风险。",
+      "tags": [
+        "电子证据",
+        "诉讼"
+      ],
+      "news": {
+        "title": "Modal 正式发布 VM Sandboxes：给 Agent 一台完整的 Linux 虚拟机",
+        "url": "https://modal.com/blog/vm-sandboxes-agent-computers",
+        "source": "AIHOT · Modal 官方工程博客（RSS）",
+        "aihotUrl": "https://aihot.news/items/rdjmj3nqrje120k46r63xrth4"
+      },
+      "score": 66,
+      "verdict": {
+        "novelty": 12,
+        "usefulness": 15,
+        "feasibility": 17,
+        "timing": 10,
+        "fit": 12,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "沙箱成熟便宜，难在律所敢不敢把对方证据传云"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": false,
+        "approved": false,
+        "reason": "compliant=false：将当事人文件传第三方VM环境违反保密义务，风险未",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    },
+    {
+      "rank": 9,
+      "title": "判决要旨六十秒卡组",
+      "field": "内容",
+      "idea": "Suno 上线 Speech beta，官方称这是第一个能把语音与原创背景音乐当作一条完整曲目一次生成的音频模型：输入文字、描述想要的声音与音乐风格，直接出成品，beta 已对所有用户开放。它真正的强项不是做长节目，是快——一段 60 到 90 秒、用配乐当段落标记的音频，成本几乎等于写一段脚本。所以定位从播客改成音频版裁判要旨卡组：一份公开判决里通常只有三到五句能独立成立的说理，每句配一条援引条文，做成一张 60 秒卡。开庭前二十分钟，律师要扫的不是整篇判决，是对方援引的三个判例里各自那三句话；音频卡能一边翻卷宗一边听完，配乐只在要旨起落处淡入淡出，帮他记住这里换了一句话。一组卡配一张带时间戳的要旨索引表，可检索、可当庭翻查，音频只是入口，真正被反复打开的是那张表。今晚就能从裁判文书网挑一份被援引过的公开判决开工。",
+      "plan": [
+        "今晚：从裁判文书网挑一份公开且已被类案援引的判决，摘出 3 条能独立成立的说理句，每条压到 120 字以内并标注援引条文。",
+        "用 Speech beta 逐条生成 60 秒音频，固定两套音色描述词（说理一套、结论一套），配乐只在要旨起落处淡入淡出，产出第一组三张卡。",
+        "同步做一张带时间戳的要旨索引表（案号、法院、年份、要旨、援引条文、对应音频位置），与音频卡一起发布。",
+        "找三位执业律师在模拟庭前场景试听，只问一件事：听完能否说出对方援引那三个判例各自的说理，产出反馈与脚本修改点。",
+        "连做五份判决、共十五张卡后看索引表被检索的次数，据此前调整要旨切分粒度，而不是去调配乐。"
+      ],
+      "deliverable": "一组三张 60 秒裁判要旨音频卡，加一张带时间戳、可检索的要旨索引表（实际更先被用起来的往往是那张表）",
+      "risk": "公开判决里的当事人身份与可识别细节一旦匿名化不彻底，做成音频传播会直接变成隐私与名誉风险，且已发布内容无法撤回。",
+      "tags": [
+        "法律传播",
+        "音频内容",
+        "检索工具"
+      ],
+      "news": {
+        "title": "Suno 推出 Speech beta：语音与背景音乐一体生成",
+        "url": "https://suno.com/blog/introducing-speech-beta",
+        "source": "AIHOT · Suno：Blog（网页）",
+        "aihotUrl": "https://aihot.news/items/rnjrj40fmm98d9duz9lcuk8u2"
+      },
+      "score": 66,
+      "verdict": {
+        "novelty": 12,
+        "usefulness": 13,
+        "feasibility": 19,
+        "timing": 11,
+        "fit": 11,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "判决书念成播客，是维生素，不是止痛药"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": false,
+        "approved": false,
+        "reason": "compliant=false：判决音频传播若匿名化不彻底即构成隐私与名誉侵权风",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    }
+  ],
+  "notice": "今天达标 9 条（目标 10，其余未过审或候选不足）",
+  "review": {
+    "models": [
+      "回退:OPENCODE_GO",
+      "agnes-2.0-flash"
+    ],
+    "approved": 7,
+    "total": 9
+  },
+  "fallback": null,
+  "warnings": []
+}
