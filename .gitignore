@@ -1,0 +1,10 @@
+.env
+logs/
+node_modules/
+site/
+wemprss-data/
+*.lic
+~$*
+
+# 公众号原文存档：版权内容，绝不发布
+data/frontier-raw/
