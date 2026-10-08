@@ -1,32 +1,5 @@
-/* 头脑风暴 BRAINSTORM —— 浅色（默认）与深色双主题，aihot 时间线版式 */
+/* 头脑风暴 BRAINSTORM —— 视觉规范取自 aihot.news 的暗色时间线风格（单列版） */
 :root {
-  --bg-0: #f5f7f8;
-  --surface-card: #ffffff;
-  --surface-card-hover: #f0f5f7;
-  --surface-elevated: #edf1f4;
-  --text-0: #16222b;
-  --text-soft: #2e3c47;
-  --text-mid: #5a6a76;
-  --text-dim: #8d9aa5;
-  --border: rgba(22, 34, 43, 0.12);
-  --border-strong: rgba(22, 34, 43, 0.22);
-  --brand-teal: #176b75;
-  --cyan-a: #0891a3;
-  --cyan-b: #056e8a;
-  --accent: #0588a0;
-  --amber: #a97b28;
-  --rose: #c2503a;
-  --emerald: #25855c;
-  --purple: #6f55c8;
-  --rank-rest: #7b869a;
-  --note-fg: #2e6e57;
-  --card-shadow: 0 1px 3px rgba(22, 34, 43, 0.06);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --mono: "SF Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-}
-
-[data-theme="dark"] {
   --bg-0: #13191c;
   --surface-card: #1a2226;
   --surface-card-hover: #1d272b;
@@ -37,9 +10,19 @@
   --text-dim: rgba(232, 235, 242, 0.35);
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.12);
+  --brand-teal: #176b75;
   --cyan-a: #5deef0;
+  --cyan-b: #078ea9;
   --accent: #45dbe4;
-  --card-shadow: none;
+  --amber: #d3b26a;
+  --rose: #d86a52;
+  --emerald: #5fc79a;
+  --purple: #ab9df2;
+  --rank-rest: #7b869a;
+  --note-fg: #8fb8a8;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --mono: "SF Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 
 * { box-sizing: border-box; }
@@ -60,15 +43,6 @@ a { color: inherit; text-decoration: none; }
 .feed-head h1 { font-size: 23px; margin: 0 0 6px; letter-spacing: 0.01em; }
 
 /* 板块切换 */
-.brand-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
-.brand { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 700; color: var(--text-0); }
-.theme-btn {
-  width: 34px; height: 34px; border-radius: 999px;
-  border: 1px solid var(--border); background: var(--surface-card);
-  font-size: 15px; cursor: pointer; line-height: 1;
-}
-.theme-btn:hover { border-color: var(--border-strong); }
-
 .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
 .tab {
   padding: 5px 16px; border-radius: 999px; border: 1px solid var(--border);
@@ -153,7 +127,6 @@ a { color: inherit; text-decoration: none; }
 
 .card {
   background: var(--surface-card);
-  box-shadow: var(--card-shadow);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px 18px 15px;

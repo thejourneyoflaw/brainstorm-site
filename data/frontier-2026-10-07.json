@@ -1,6 +1,6 @@
 {
   "date": "2026-10-07",
-  "generatedAt": "2026-10-07T01:27:43.489Z",
+  "generatedAt": "2026-10-08T08:35:18.744493",
   "targets": [
     "数字生命卡兹克",
     "逛逛GitHub",
@@ -12,10 +12,12 @@
     "程序员小灰"
   ],
   "channels": {
-    "aihot": 1,
+    "aihot": 0,
     "rss": 0,
     "inbox": 0,
-    "rssConfigured": false
+    "rssConfigured": true
   },
-  "items": []
+  "items": [],
+  "notice": "当日未收录到关注公众号的新文章（微信已关停跨账号查询接口，自动发现通道受限；当日文章如需分析，把链接贴进 data/frontier-links.txt）",
+  "backfilled": true
 }

@@ -1,0 +1,264 @@
+{
+  "date": "2026-09-28",
+  "generatedAt": "2026-10-08T00:34:50.206Z",
+  "model": "deepseek-v4-flash",
+  "sourceCount": 64,
+  "sourceCounts": {
+    "aihot": 85,
+    "aibot": 6
+  },
+  "ideas": [
+    {
+      "rank": 1,
+      "title": "双解析器互校的证据页校对",
+      "field": "法律",
+      "idea": "LlamaIndex 发布 OpenDocRouter，用一个统一 API 把 PDF、PNG、JPEG 或 URL 解析成 markdown，背后可接多种文档解析模型。证据整理正好卡在这个机制上：几百页银行流水、盖章合同、微信截图，单一解析器出错时你根本不知道哪页塌了。我不做一键解析，而是让两个不同解析器跑同一批页，对输出做归一化后逐页算差异比例，只把分歧大的页推给人核对——把机器的不确定性直接变成人工校对的优先级排序。为防两个解析器错在同一处（手写签名、骑缝章、印章遮挡），另加一条独立通道：对全页文字密度和空白比例做统计，密度异常或整页空白率过高的页一律无条件进人工清单，不依赖 diff。这套东西的价值不在省时间，而在把「全卷通读」换成「有据可查地抽查」，并且每次核对都沉淀一张错误类型表，下次立案前按表定向抽查关键页。今晚就能跑第一步：拿一份自己的脱敏卷宗，产出第一张分歧页加低密度页的合并清单。",
+      "plan": [
+        "今晚找一份脱敏卷宗（自己的旧案或公开判决附件），用 pdftoppm 或 Python 的 pdf2image 拆成单页 PNG，建一张页码索引表，字段含页码、来源文件、页型（表格/正文/签章页）",
+        "用 OpenDocRouter 统一 API 接两个不同解析模型，对同一批页各跑一遍，结果各存一个文件夹，文件名统一为页码，便于逐页配对",
+        "写三十行 Python 做归一化再比对：去空白、统一全角半角、数字与金额不参与合并，逐页输出差异比例，同时单独算每页字符密度与空白率",
+        "把差异比例超阈值或密度异常的页合并成一张人工核对清单，按页记录真实错误类型：数字错认、表格串行、签章栏丢失、印章遮挡",
+        "把两周累计的错误类型做成证据录入检查表，标注每类错误高发的页型，下次立案前按表抽查对应页型，不再全卷通读",
+        "找一个同事用同一份卷宗跑一遍流程，记录他漏掉的页，用来校准阈值和检查表条目"
+      ],
+      "deliverable": "一个卷宗逐页 diff 加密度异常的 Python 脚本，一张人工核对清单，一张按错误类型组织的证据录入检查表",
+      "risk": "两个解析器可能错在同一处，靠 diff 加密度统计两条通道仍会漏掉手写签名与骑缝章这类高风险页",
+      "tags": [
+        "证据",
+        "文档解析",
+        "法务效率"
+      ],
+      "news": {
+        "title": "LlamaIndex 发布 OpenDocRouter：一个 API 统一调用多种文档解析模型",
+        "url": "https://www.llamaindex.ai/blog/introducing-opendocrouter",
+        "source": "AIHOT · LlamaIndex：产品、工程与评测",
+        "aihotUrl": "https://aihot.news/items/hye210jt0h75h9t4dgf4rveow"
+      },
+      "score": 76,
+      "verdict": {
+        "novelty": 12,
+        "usefulness": 17,
+        "feasibility": 22,
+        "timing": 11,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "三十行脚本好写，难在两模型错同一处"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "双解析器互校加密度兜底，机制清晰且今晚可动手",
+        "model": "回退:OPENCODE_GO",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 2,
+      "title": "AI 生成演示材料的披露模板",
+      "field": "法律",
+      "idea": "亚利桑那州上诉法院在 Gabriel Horcasitas 路怒枪杀案中维持过失杀人定罪，但撤销量刑发回重审，理由是量刑听证播放的 AI 生成受害者视频带有不当情感分量。这个裁定的机制点很清楚：生成式材料的情感说服力可以超过原始证据本身承载的信息量，而这种超出在程序上构成对被告的不公。它的现实价值是给诉讼端一个可操作动作——不争论这类材料能不能用，而是解决「用了怎么让对方无从对质」的问题。我打算做一份庭前披露与对质清单，把生成工具名称、提示词、原始素材来源、时长帧率、剪辑与主观强化操作逐项列为可填写字段，律师可直接复制进举证目录；同时把公开可查的同类裁定做成追踪表，逐案标注法院态度、否决理由类型、材料形态（视频、配音、图像）、对定罪或量刑的影响层级，并附原文段落与链接。追踪表按季度集中更新一次，不追求实时，避免因为案件稀少而停摆。第一件事本周就能做完：在 CourtListener 检索三类关键词，把带裁定的案子做成原始链接表。",
+      "plan": [
+        "本周在 CourtListener 检索 AI-generated、reanimation、victim impact 三类关键词，把带裁定文书的案件链接、法院层级、日期存成原始链接表",
+        "用 Claude 逐案抽取四栏信息：法院态度、否决理由、材料类型（视频/配音/图像）、是否影响定罪或量刑，每栏附原文段落片段",
+        "把四栏灌进 Google Sheets 或 Airtable 做成可筛选追踪表，设一个每季度提醒的更新任务，明确只做集中更新不做实时维护",
+        "反向起草一页庭前披露清单模板，字段含生成工具、提示词、原始素材来源、时长帧率、剪辑说明，版式对准举证目录格式",
+        "拿自己或同事办过的一件含演示材料的案子做模拟填表，把实际填不出来的字段删掉或降级为选填，产出模板 v1"
+      ],
+      "deliverable": "一页可直接复制进举证目录的 AI 生成演示材料庭前披露清单 v1，加一份带原文段落的公开裁定追踪表",
+      "risk": "同类裁定数量稀少，追踪表若无固定季度更新责任人，很快退化成一次性的检索备忘录",
+      "tags": [
+        "证据",
+        "诉讼",
+        "判例检索"
+      ],
+      "news": {
+        "title": "亚利桑那州法院裁定 AI 生成受害者视频带有不当情感分量 将重新量刑",
+        "url": "https://www.404media.co/undue-emotional-weight/",
+        "source": "AIHOT · 404 Media（RSS）",
+        "aihotUrl": "https://aihot.news/items/iz93flwr7h9m7po4wnu8sm4hy"
+      },
+      "score": 70,
+      "verdict": {
+        "novelty": 13,
+        "usefulness": 14,
+        "feasibility": 20,
+        "timing": 11,
+        "fit": 12,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "清单像合规文书，追踪表恐无人维护"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "裁定到披露清单的链条真实，本周即可检索起草",
+        "model": "回退:OPENCODE_GO",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 3,
+      "title": "律师判断力月度小测",
+      "field": "法律",
+      "idea": "Google Research 在 NBER 发表的三个月随机田野实验，向 11 家知识产权律所的 133 名律师随机开放了当时未发布的 AI 专利写作助手，结论是 AI 辅助未必能培养初级律师的专业判断。机制点在于 AI 把产出和判断解耦了：文书格式和措辞变漂亮，判断力可能原地不动，甚至让人误以为自己在进步。所以该测的不是 AI 好不好用，而是用 AI 的人还在不在长本事。我打算做一套 20 题的法律风险判断小测，每题给三个选项和一个较优解并注明考点，团队每月复测一次；同时把当月 AI 对话按提问深度分三级打分——只要求出稿、要求给方案并说明理由、要求给方案加反驳并指出适用边界。两条曲线连续看三个月，就能看出得分停滞时提问质量是否也停滞，而不是凭感觉说团队在成长。难点是防止题目只在测记忆和套路，所以每题都要能追溯到具体考点，错题必须回填考点名而不是只记分数。先写 10 题劳动争议与合同风险场景题，本周内就能定稿。",
+      "plan": [
+        "本周先写 10 题劳动争议与合同风险场景题，每题三个选项加一个较优解，并标注考点名（如举证责任分配、时效起算、条款效力）",
+        "用 Claude 生成干扰项和反方理由作素材，人工逐题校核，删掉有争议或纯记忆型的题，补到 20 题并标出每题难度档",
+        "在 Notion 建复测看板，字段含日期、得分、错题考点、当月主要使用的 AI 工具、AI 对话提问深度均分（1 到 3 分）",
+        "每月固定一天全员复测，同日手动翻阅当月 AI 对话记录按三级标准打分，结果与当日得分记在同一条目下",
+        "满三个月后画得分与提问深度两条折线，写一份内部小报告，说明得分停滞的成员其提问质量是否同步停滞，并据此调整题库或培训动作"
+      ],
+      "deliverable": "20 题法律风险判断测评题库（含考点与较优解），加一份 Notion 月度复测看板模板",
+      "risk": "如果题目滑向记忆和套路，两条曲线都会很好看却测不出真实判断力，等于白测三个月",
+      "tags": [
+        "律师培养",
+        "法务效率"
+      ],
+      "news": {
+        "title": "Google Research 三个月专利起草实验发现AI辅助未必能培养初级律师的专业判断",
+        "url": "https://research.google/blog/does-better-work-always-mean-better-workers/",
+        "source": "AIHOT · Google Research：Blog（网页）",
+        "aihotUrl": "https://aihot.news/items/tyhn4y95ez3mvj0p7xovpaq61"
+      },
+      "score": 67,
+      "verdict": {
+        "novelty": 13,
+        "usefulness": 12,
+        "feasibility": 19,
+        "timing": 10,
+        "fit": 13,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "复测三个月后，只剩你自己在打卡"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "实验结论直指判断力测量，题库本周可先写十题",
+        "model": "回退:OPENCODE_GO",
+        "fallback": true
+      }
+    },
+    {
+      "rank": 4,
+      "title": "474GW 并网队列的净需求表",
+      "field": "金融",
+      "idea": "a16z 的 Ryan McEntush 拆解了德州为何让数据中心排队等电：ERCOT 并网队列从 2024 年底的 63 GW 涨到今年 6 月的 474 GW，约九成是数据中心，而实际建成速度远跟不上。关键在于入队门槛低、先到先得，容量申报并不等于真实需求。真正能算出东西的不是队列长度，而是去重后的净需求：同一家运营商常用多个 LLC 在不同互联点重复占位，把 474 GW 按申请主体归一后剩下的容量，才是可被定价的用电承诺，也才是配套电力资产与相关债券信用该用的分母。做法是先做主体归一，再按历史撤回率给每个主体一个兑现系数，得出净需求区间，并单独列出单主体申报超 1 GW、互联点分散的可疑名单。本周就能从 ERCOT 公开报告起步，产出一张可更新的净需求表。",
+      "plan": [
+        "本周从 ERCOT 官网下载最新并网队列报告与 2023、2024 两份历史快照，统一成 CSV，字段含项目名、容量、类型、状态、申请日、互联点、申请主体",
+        "写一段 Python 做主体归一：用名称模糊匹配加地址与联系人字段，把 LLC 壳归到同一集团，输出主体-容量聚合表",
+        "用历史快照统计各状态在 12 个月、24 个月后的留存率，作为每个主体的兑现系数基准",
+        "对 474 GW 逐项套兑现系数，得到去重后净需求区间，并导出单主体申报超 1 GW 且互联点分散的名单",
+        "人工抽查前十名主体的公开背景：官网、SEC 文件、地方新闻，核对是否存在占位嫌疑",
+        "输出可更新台账，附一篇短文说明净需求与队列总容量的差额从何而来"
+      ],
+      "deliverable": "一张按申请主体去重、带兑现系数的德州数据中心用电净需求表",
+      "risk": "ERCOT 历史快照口径变化或缺失，名称模糊匹配可能把不同公司错并成一家。",
+      "tags": [
+        "基础设施",
+        "电力",
+        "资产信用"
+      ],
+      "news": {
+        "title": "a16z 解析德州为何让数据中心排队等电",
+        "url": "https://www.a16z.news/p/why-texas-is-making-data-centers",
+        "source": "AIHOT · a16z：News（RSS）",
+        "aihotUrl": "https://aihot.news/items/yk3grmalszldrwd1p8bxk0cki"
+      },
+      "score": 67,
+      "verdict": {
+        "novelty": 11,
+        "usefulness": 15,
+        "feasibility": 17,
+        "timing": 11,
+        "fit": 13,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "队列漏斗早有人做，你只换了封面"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    },
+    {
+      "rank": 5,
+      "title": "改稿 diff 分两层训分身",
+      "field": "技术",
+      "idea": "微软亚洲研究院开源了 Agent Lightning v1.0，约 3,500 行代码，核心主张是训练用 harness 与部署用 harness 完全一致，让模型在真实工具链里跑出的轨迹直接做强化学习，而不是在简化环境里训完再搬。对法务来说，这意味着每天改 AI 初稿留下的 diff 就是天然 reward 信号。但直接攒两百条轨迹再训有个硬伤：你的偏好在变，模型学到的可能是三个月前的你。拆成两层更稳：稳定层用规则从 diff 里归纳成可读清单，比如哪类条款必须留兜底、哪里必须补书面确认，进 git 做版本；风格层才交给 Agent Lightning 训句式与用词。每两周拿最近 30 条 diff 做漂移检测，只允许更新稳定层以外的部分。这样二十条 diff 就能起步，第一周就能用清单约束审稿 agent，再逐步接上 RL，训出「像我」的那一层。",
+      "plan": [
+        "今晚写一段 20 行左右的脚本，把过去三个月的文书初稿与定稿按段落对齐做 diff，输出上下文、初稿、定稿三元组到本地 JSONL",
+        "用同一脚本按条款类型聚类改动，人工把高频项归纳成偏好清单，明确分成稳定层与风格层，存入 git 仓库并打版本号",
+        "用 Agent Lightning v1.0 起最小 harness，工具只留模板检索与条款库查询两个，把稳定层清单作为显式约束注入",
+        "累积到 20 条轨迹时先跑规则版审稿验证效果，到 200 条时跑第一轮 RL，留 20 条作验证集",
+        "每两周用最近 30 条 diff 跑漂移检测，更新清单版本，并记录自己改动量的变化曲线",
+        "把 agent 接回日常起草流程，对比接入前后每份文书的改动次数"
+      ],
+      "deliverable": "一份带版本号的改稿偏好清单，加一个先用清单、后接 RL 的小型审稿 agent",
+      "risk": "分桶后每类样本更少，风格层容易过拟合最近几个案子的文风。",
+      "tags": [
+        "Agent RL",
+        "法律文书"
+      ],
+      "news": {
+        "title": "Microsoft Research Asia 开源 Agent Lightning v1.0：3,500 行代码的真实 harness 智能体 RL 训练框架",
+        "url": "https://www.microsoft.com/en-us/research/blog/agent-lightning-v1-0-a-3500-line-lightweight-agentic-rl-framework-for-training-agents-with-real-harnesses/",
+        "source": "AIHOT · Microsoft Research 博客（RSS）",
+        "aihotUrl": "https://aihot.news/items/t9wypjd9cbb42ttuq7vrpp07l"
+      },
+      "score": 66,
+      "verdict": {
+        "novelty": 13,
+        "usefulness": 13,
+        "feasibility": 14,
+        "timing": 12,
+        "fit": 14,
+        "grade": "降位",
+        "flags": [],
+        "checkFail": [],
+        "critique": "攒够两百条轨迹前，你的偏好已变"
+      },
+      "review": {
+        "linkTruth": true,
+        "actionable": true,
+        "interesting": true,
+        "compliant": true,
+        "approved": true,
+        "reason": "可以发布",
+        "model": "agnes-2.0-flash",
+        "fallback": false
+      }
+    }
+  ],
+  "notice": "今天达标 5 条（目标 10，其余未过审或候选不足）",
+  "review": {
+    "models": [
+      "回退:OPENCODE_GO",
+      "agnes-2.0-flash"
+    ],
+    "approved": 5,
+    "total": 5
+  },
+  "fallback": null,
+  "warnings": []
+}
