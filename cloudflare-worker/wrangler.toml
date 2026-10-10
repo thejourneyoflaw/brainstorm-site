@@ -1,0 +1,11 @@
+name = "brainstorm-frontier"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+account_id = "7d99678b080c2b355f60fba761e4220b"
+
+[[kv_namespaces]]
+binding = "FRONTIER_KV"
+id = "47fd3e9043844ec2b018a70222ae85a2"
+
+[triggers]
+crons = ["0 22 * * *"]  # UTC 22:00 = 北京时间 06:00

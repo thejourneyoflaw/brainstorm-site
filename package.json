@@ -1,0 +1,16 @@
+{
+  "name": "brainstorm-idea-daily",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "头脑风暴 BRAINSTORM：每天从 AI 资讯里筛出 10 个可落地的创意（五维评分 + 双重审查闸）",
+  "scripts": {
+    "collect": "node collect.mjs",
+    "sample": "node sample.mjs",
+    "start": "node server.mjs",
+    "check-llm": "node test-llm.mjs"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0"
+  }
+}
